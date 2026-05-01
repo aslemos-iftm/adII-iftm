@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Simulador: Decisão Estatística (Bicaudal)</title>
+<style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #eef2f5; color: #2c3e50;}
+    .container { max-width: 1150px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+    h2 { text-align: center; margin-top: 0; color: #1a252f; font-weight: 600; }
+    
+    .logic-panel { background: #fff3cd; border-left: 5px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 4px; font-size: 1.05em; color: #856404; display: flex; justify-content: space-between; gap: 15px;}
+    .logic-panel div { flex: 1; text-align: center; background: rgba(255,255,255,0.5); padding: 10px; border-radius: 5px;}
+    
+    .controls { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 10px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e0e6ed;}
+    .control-group { flex: 1; min-width: 250px; }
+    label { font-weight: bold; display: block; margin-bottom: 8px; font-size: 1em; color: #34495e;}
+    input[type=range] { width: 100%; cursor: pointer; accent-color: #3498db; }
+    small { color: #7f8c8d; font-weight: normal; display: block; margin-top: 5px; font-size: 0.85em; }
+
+    .stats { display: flex; gap: 15px; margin-top: 20px; font-size: 1.1em; font-weight: bold;}
+    .stat-box { padding: 15px; border-radius: 8px; flex: 1; text-align: center; color: white; box-shadow: 0 3px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: center;}
+    .stat-box span { font-size: 1.4em; display: block; margin-top: 5px;}
+    .box-alpha { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+    .box-beta { background: linear-gradient(135deg, #3498db, #2980b9); }
+    .box-power { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+    
+    .verdict-panel { margin-top: 20px; padding: 15px; text-align: center; font-size: 1.2em; border-radius: 8px; transition: 0.3s; line-height: 1.5;}
+    .verdict-reject { background-color: #fcebeb; color: #c0392b; border: 2px solid #e74c3c; }
+    .verdict-accept { background-color: #ebf5fb; color: #2980b9; border: 2px solid #3498db; }
+    .verdict-warning { background-color: #fef5e7; color: #d35400; border: 2px solid #e67e22; }
+    
+    canvas { width: 100%; height: 500px; margin-top: 20px; background: #ffffff; border-radius: 8px; border: 1px solid #ecf0f1; }
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>Análise de Risco Bicaudal: A Fronteira Exata e a Realidade</h2>
+    
+    <div class="logic-panel">
+        <div><strong>A Premissa (H<sub>0</sub>):</strong><br> A operação cumpre a meta cravada, sem faltar nem sobrar. (μ = μ<sub>0</sub>)</div>
+        <div><strong>O Modelo Teórico:</strong><br> A Fronteira (μ<sub>0</sub>). O orçamento de falsos alarmes (α) é dividido nas duas extremidades do contrato.</div>
+        <div><strong>A Estimativa (x̄<sub>obs</sub>):</strong><br> O que a amostra revela. Pode vazar para a esquerda (falta) ou direita (excesso).</div>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label>Nível de Significância (α total): <span id="val-alpha">5</span>%</label>
+            <input type="range" id="slider-alpha" min="1" max="20" step="1" value="5">
+            <small>Orçamento máximo (dividido nas duas caudas)</small>
+        </div>
+        <div class="control-group">
+            <label>Tamanho da Amostra (n): <span id="val-n">30</span></label>
+            <input type="range" id="slider-n" min="5" max="150" step="1" value="30">
+            <small>Investimento na auditoria (afina as curvas)</small>
+        </div>
+        <div class="control-group">
+            <label>Resultado da Amostra (x̄<sub>obs</sub> = μ<sub>1</sub>): <span id="val-xobs">1.5</span></label>
+            <input type="range" id="slider-xobs" min="-3.0" max="3.0" step="0.1" value="1.5">
+            <small>Arraste para estimar desvios negativos ou positivos</small>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat-box box-alpha">Risco Falso Alarme (α)<span id="stat-alpha">5.0%</span></div>
+        <div class="stat-box box-beta">Taxa de Camuflagem (β)<span id="stat-beta">0.0%</span></div>
+        <div class="stat-box box-power">Poder de Detecção (1 - β)<span id="stat-power">0.0%</span></div>
+    </div>
+    
+    <div id="verdict-box" class="verdict-panel verdict-accept">
+        Veredito Estatístico: Calculando...
+    </div>
+
+    <canvas id="simCanvas" width="1100" height="500"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+
+    const sigmaPop = 2.0;
+
+    function pdf(x, mu, sigma) {
+        return (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - mu) / sigma, 2));
+    }
+
+    function invNorm(p) {
+        const a1 = -39.696830, a2 = 220.946098, a3 = -275.928510, a4 = 138.357751, a5 = -30.664798, a6 = 2.506628;
+        const b1 = -54.476098, b2 = 161.585836, b3 = -155.698979, b4 = 66.801311, b5 = -13.280681;
+        const c1 = -0.007784894002, c2 = -0.322396458041, c3 = -2.400758277161, c4 = -2.549732539343, c5 = 4.374664141464, c6 = 2.938163982698;
+        const d1 = 0.007784695709, d2 = 0.322467129070, d3 = 2.445134137142, d4 = 3.754408661907;
+        let q, r, x;
+        if (p < 0.02425) {
+            q = Math.sqrt(-2 * Math.log(p));
+            x = (((((c1 * q + c2) * q + c3) * q + c4) * q + c5) * q + c6) / ((((d1 * q + d2) * q + d3) * q + d4) * q + 1);
+        } else if (p <= 0.5) {
+            q = p - 0.5; r = q * q;
+            x = (((((a1 * r + a2) * r + a3) * r + a4) * r + a5) * r + a6) * q / (((((b1 * r + b2) * r + b3) * r + b4) * r + b5) * r + 1);
+        } else if (p < 0.97575) {
+            q = p - 0.5; r = q * q;
+            x = (((((a1 * r + a2) * r + a3) * r + a4) * r + a5) * r + a6) * q / (((((b1 * r + b2) * r + b3) * r + b4) * r + b5) * r + 1);
+        } else {
+            q = Math.sqrt(-2 * Math.log(1 - p));
+            x = -(((((c1 * q + c2) * q + c3) * q + c4) * q + c5) * q + c6) / ((((d1 * q + d2) * q + d3) * q + d4) * q + 1);
+        }
+        return x;
+    }
+
+    function cdf(x, mu, sigma) {
+        let z = (x - mu) / sigma;
+        let t = 1 / (1 + 0.2316419 * Math.abs(z));
+        let d = 0.3989423 * Math.exp(-z * z / 2);
+        let prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+        return z > 0 ? 1 - prob : prob;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        
+        let alpha = parseFloat(document.getElementById('slider-alpha').value) / 100;
+        let n = parseFloat(document.getElementById('slider-n').value);
+        let xObs = parseFloat(document.getElementById('slider-xobs').value);
+        let mu1 = xObs; 
+        
+        let mu0 = 0; 
+        let SE = sigmaPop / Math.sqrt(n); 
+        
+        // Espaço simétrico
+        let xMin = -3.5, xMax = 3.5;
+        function scaleX(val) { return ((val - xMin) / (xMax - xMin)) * W; }
+        
+        let peakY = pdf(mu0, mu0, SE); 
+        function scaleY(val) { return H - (val / (peakY * 1.1)) * (H * 0.85) - 45; } 
+
+        // LÓGICA BICAUDAL: O Alfa é dividido por 2
+        let zScore = invNorm(1 - alpha/2);
+        let xCritDir = mu0 + zScore * SE; 
+        let xCritEsq = mu0 - zScore * SE; 
+        
+        // Beta é a área da realidade presa ENTRE os dois muros
+        let beta = cdf(xCritDir, mu1, SE) - cdf(xCritEsq, mu1, SE); 
+        let power = 1 - beta;
+
+        document.getElementById('stat-alpha').innerText = (alpha * 100).toFixed(1) + "%";
+        document.getElementById('stat-beta').innerText = (beta * 100).toFixed(1) + "%";
+        document.getElementById('stat-power').innerText = (power * 100).toFixed(1) + "%";
+
+        const verdictBox = document.getElementById('verdict-box');
+        
+        // Veredito com as 3 Fases
+        if (Math.abs(xObs - mu0) < 0.05) {
+            // Fase 1: Exatamente no alvo
+            verdictBox.className = 'verdict-panel verdict-accept';
+            verdictBox.innerHTML = `<strong>Mantém-se H<sub>0</sub></strong> (Operação Cravada na Meta)<br>
+            <span style="color: #666; font-size: 0.9em;">🔍 <em>Nota: A premissa H<sub>0</sub> é verdadeira no alvo. A chance de outra amostra gerar um falso alarme é apenas o risco residual da região crítica (o próprio Alfa).</em></span>`;
+        } else if (xObs > xCritEsq && xObs < xCritDir) {
+            // Fase 2: Zona de Indiferença (Micro-desvio tolerado)
+            let direcao = xObs > mu0 ? "positivo" : "negativo";
+            verdictBox.className = 'verdict-panel verdict-warning';
+            verdictBox.innerHTML = `<strong>Mantém-se H<sub>0</sub></strong> (Zona de Tolerância / Micro-desvio ${direcao})<br>
+            <span style="color: #666; font-size: 0.9em;">🔍 <em>Nota: O desvio existe, mas é estatisticamente pequeno. A alta taxa de Beta (${(beta*100).toFixed(0)}%) reflete a tolerância do sistema em ignorar este ruído (o Falso Negativo perde significado).</em></span>`;
+        } else {
+            // Fase 3: Zona Crítica (Rejeição Esquerda ou Direita)
+            let lado = xObs <= xCritEsq ? "Negativo (Falta)" : "Positivo (Excesso)";
+            verdictBox.className = 'verdict-panel verdict-reject';
+            verdictBox.innerHTML = `<strong>Rejeita-se H<sub>0</sub></strong> (Desvio Operacional ${lado})<br>
+            <span style="color: #666; font-size: 0.9em;">🔍 <em>Nota: Estima-se que há ${(beta*100).toFixed(1)}% de chance de <strong>uma outra amostra</strong> falhar em detectar este nível de desvio, mas ${(power*100).toFixed(1)}% de chance de ela confirmá-lo (Poder).</em></span>`;
+        }
+
+        // PINTURAS DE ÁREA ALFA (Dividida nas duas caudas)
+        ctx.fillStyle = "rgba(231, 76, 60, 0.45)"; 
+        // Cauda Esquerda
+        ctx.beginPath();
+        ctx.moveTo(scaleX(xMin), scaleY(0));
+        for(let x = xMin; x <= xCritEsq; x += 0.02) ctx.lineTo(scaleX(x), scaleY(pdf(x, mu0, SE)));
+        ctx.lineTo(scaleX(xCritEsq), scaleY(0));
+        ctx.fill();
+        // Cauda Direita
+        ctx.beginPath();
+        ctx.moveTo(scaleX(xCritDir), scaleY(0));
+        for(let x = xCritDir; x <= xMax; x += 0.02) ctx.lineTo(scaleX(x), scaleY(pdf(x, mu0, SE)));
+        ctx.lineTo(scaleX(xMax), scaleY(0));
+        ctx.fill();
+
+        // PINTURA DE ÁREA BETA (Presa entre as caudas)
+        ctx.fillStyle = "rgba(52, 152, 219, 0.45)"; 
+        ctx.beginPath();
+        ctx.moveTo(scaleX(xCritEsq), scaleY(0));
+        for(let x = xCritEsq; x <= xCritDir; x += 0.02) ctx.lineTo(scaleX(x), scaleY(pdf(x, mu1, SE)));
+        ctx.lineTo(scaleX(xCritDir), scaleY(0));
+        ctx.fill();
+
+        // LINHA DA FRONTEIRA CENTRAL
+        ctx.strokeStyle = "#95a5a6"; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(scaleX(mu0), H - 45);
+        ctx.lineTo(scaleX(mu0), 20);
+        ctx.stroke();
+        ctx.setLineDash([]); 
+
+        // CURVAS
+        ctx.strokeStyle = "#2c3e50"; ctx.lineWidth = 3;
+        ctx.beginPath();
+        for(let x = xMin; x <= xMax; x += 0.02) ctx.lineTo(scaleX(x), scaleY(pdf(x, mu0, SE)));
+        ctx.stroke();
+
+        ctx.strokeStyle = "#8e44ad"; ctx.lineWidth = 3;
+        ctx.beginPath();
+        for(let x = xMin; x <= xMax; x += 0.02) ctx.lineTo(scaleX(x), scaleY(pdf(x, mu1, SE)));
+        ctx.stroke();
+
+        // LINHAS DOS VALORES CRÍTICOS (Esquerda e Direita)
+        ctx.strokeStyle = "#c0392b"; ctx.lineWidth = 2; ctx.setLineDash([8, 6]);
+        ctx.beginPath();
+        ctx.moveTo(scaleX(xCritEsq), H - 45); ctx.lineTo(scaleX(xCritEsq), 40);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(scaleX(xCritDir), H - 45); ctx.lineTo(scaleX(xCritDir), 40);
+        ctx.stroke();
+        ctx.setLineDash([]); 
+
+        // LINHA DA AMOSTRA OBSERVADA
+        ctx.strokeStyle = "#27ae60"; 
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(scaleX(xObs), H - 45); 
+        let curveHeight = pdf(xObs, mu1, SE);
+        ctx.lineTo(scaleX(xObs), scaleY(curveHeight));
+        ctx.stroke();
+
+        // EIXO X
+        ctx.strokeStyle = "#bdc3c7"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, H - 45); ctx.lineTo(W, H - 45); ctx.stroke();
+
+        // RÓTULOS E TEXTOS
+        ctx.font = "bold 15px 'Segoe UI'";
+        
+        ctx.fillStyle = "#2c3e50"; 
+        ctx.fillText("Cenário Limite (Fronteira μ₀)", scaleX(mu0) - 100, 30);
+        
+        ctx.fillStyle = "#8e44ad"; 
+        ctx.fillText("Amostras Reais Estimadas", scaleX(mu1) - 90, 55);
+        
+        ctx.fillStyle = "#27ae60"; 
+        let obsLabelX = scaleX(xObs) + 12;
+        if (scaleX(xObs) > W - 160) obsLabelX = scaleX(xObs) - 160; 
+        ctx.fillText("Amostra Observada", obsLabelX, 80);
+
+        ctx.fillStyle = "#95a5a6"; ctx.font = "bold 13px 'Segoe UI'";
+        ctx.fillText("Fronteira μ₀", scaleX(mu0) - 25, H - 15);
+        
+        ctx.fillStyle = "#c0392b"; 
+        ctx.fillText("Crit. Esq.", scaleX(xCritEsq) - 65, H - 70);
+        ctx.fillText("Crit. Dir.", scaleX(xCritDir) + 8, H - 70);
+    }
+
+    document.getElementById('slider-alpha').addEventListener('input', (e) => {
+        document.getElementById('val-alpha').innerText = e.target.value; draw();
+    });
+    document.getElementById('slider-n').addEventListener('input', (e) => {
+        document.getElementById('val-n').innerText = e.target.value; draw();
+    });
+    document.getElementById('slider-xobs').addEventListener('input', (e) => {
+        document.getElementById('val-xobs').innerText = parseFloat(e.target.value).toFixed(1); draw();
+    });
+
+    draw();
+</script>
+</body>
+</html>
