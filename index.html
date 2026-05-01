@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análise de Dados II — IFTM</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:       #1a1a2e;
+    --ink-soft:  #3d3d5c;
+    --paper:     #f5f2eb;
+    --paper-alt: #ede9df;
+    --accent:    #c0392b;
+    --accent2:   #2c7a4b;
+    --accent3:   #2563a8;
+    --rule:      rgba(26,26,46,0.12);
+    --mono:      'DM Mono', monospace;
+    --serif:     'DM Serif Display', Georgia, serif;
+    --sans:      'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── GRAIN OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    opacity: 0.5;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative; z-index: 1;
+    border-bottom: 2px solid var(--ink);
+    padding: 0 clamp(24px, 6vw, 80px);
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
+    background: var(--paper);
+  }
+
+  .header-brand {
+    display: flex; align-items: center; gap: 16px;
+    padding: 20px 0;
+  }
+
+  .iftm-badge {
+    width: 48px; height: 48px;
+    background: var(--ink);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .iftm-badge span {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--paper);
+    letter-spacing: 0.02em;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .header-text h1 {
+    font-family: var(--serif);
+    font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+
+  .header-text p {
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .header-meta {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    text-align: right;
+    line-height: 1.8;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative; z-index: 1;
+    padding: clamp(48px, 8vw, 100px) clamp(24px, 6vw, 80px) clamp(40px, 6vw, 80px);
+    border-bottom: 1px solid var(--rule);
+    overflow: hidden;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+    align-items: end;
+    max-width: 960px;
+  }
+
+  .hero-label {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .hero-label::before {
+    content: '';
+    display: block;
+    width: 28px; height: 1px;
+    background: var(--accent);
+  }
+
+  .hero h2 {
+    font-family: var(--serif);
+    font-size: clamp(2.4rem, 6vw, 4.2rem);
+    line-height: 1.1;
+    font-weight: 400;
+    color: var(--ink);
+    max-width: 640px;
+  }
+
+  .hero h2 em {
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  .hero-desc {
+    margin-top: 28px;
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+    max-width: 560px;
+    line-height: 1.75;
+  }
+
+  .hero-decoration {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--rule);
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+    user-select: none;
+    text-align: right;
+    opacity: 0.6;
+    display: none;
+  }
+
+  @media (min-width: 700px) { .hero-decoration { display: block; } }
+
+  /* ── SECTION STRUCTURE ── */
+  section {
+    position: relative; z-index: 1;
+    padding: clamp(40px, 6vw, 72px) clamp(24px, 6vw, 80px);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .section-header {
+    display: flex; align-items: baseline; gap: 16px;
+    margin-bottom: 36px;
+  }
+
+  .section-number {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    flex-shrink: 0;
+    padding-top: 4px;
+  }
+
+  .section-title {
+    font-family: var(--serif);
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+
+  /* ── GRID ── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2px;
+    border: 1px solid var(--rule);
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--paper);
+    border: none;
+    padding: 28px 28px 24px;
+    display: flex; flex-direction: column;
+    position: relative;
+    transition: background 0.2s;
+    outline: 1px solid var(--rule);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .card:hover { background: var(--paper-alt); }
+
+  .card-tag {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 2px;
+    display: inline-block;
+    margin-bottom: 16px;
+    width: fit-content;
+  }
+
+  .tag-simulador { background: rgba(192,57,43,0.1); color: var(--accent); }
+  .tag-teoria    { background: rgba(37,99,168,0.1); color: var(--accent3); }
+  .tag-exercicio { background: rgba(44,122,75,0.1); color: var(--accent2); }
+  .tag-referencia{ background: rgba(26,26,46,0.07); color: var(--ink-soft); }
+  .tag-em-breve  { background: rgba(26,26,46,0.05); color: #999; }
+
+  .card-title {
+    font-family: var(--serif);
+    font-size: 1.2rem;
+    font-weight: 400;
+    line-height: 1.3;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+
+  .card-desc {
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    line-height: 1.65;
+    flex: 1;
+  }
+
+  .card-arrow {
+    margin-top: 20px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .card-arrow::after {
+    content: '→';
+    transition: transform 0.2s;
+  }
+
+  .card:hover .card-arrow::after { transform: translateX(4px); }
+
+  .card-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: default;
+  }
+
+  /* ── EMENTA TABLE ── */
+  .ementa-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  .ementa-table th {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    text-align: left;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-alt);
+  }
+
+  .ementa-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+    color: var(--ink);
+  }
+
+  .ementa-table tr:last-child td { border-bottom: none; }
+  .ementa-table tr:hover td { background: var(--paper-alt); }
+
+  .ementa-table .num {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  /* ── INFO BLOCKS ── */
+  .info-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 2px;
+    border: 1px solid var(--rule);
+    margin-bottom: 32px;
+  }
+
+  .info-block {
+    padding: 20px 24px;
+    background: var(--paper);
+    outline: 1px solid var(--rule);
+  }
+
+  .info-block dt {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+
+  .info-block dd {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative; z-index: 1;
+    padding: 32px clamp(24px, 6vw, 80px);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    border-top: 2px solid var(--ink);
+    background: var(--paper);
+  }
+
+  footer p {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--ink-soft);
+    letter-spacing: 0.05em;
+  }
+
+  footer a {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  footer a:hover { border-color: var(--ink); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero h2, .hero-desc, .hero-label { animation: fadeUp 0.6s ease both; }
+  .hero-label  { animation-delay: 0.05s; }
+  .hero h2     { animation-delay: 0.15s; }
+  .hero-desc   { animation-delay: 0.25s; }
+
+  /* ── DIVIDER ── */
+  .rule-label {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 24px;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--ink-soft);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .rule-label::before, .rule-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  .rule-label::before { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════ HEADER -->
+<header>
+  <div class="header-brand">
+    <div class="iftm-badge"><span>IF<br>TM</span></div>
+    <div class="header-text">
+      <h1>Análise de Dados II</h1>
+      <p>Tecnologia em Logística · Campus Uberlândia Centro</p>
+    </div>
+  </div>
+  <div class="header-meta">
+    Semestre 2025/2<br>
+    Prof. André Lemos
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════ HERO -->
+<div class="hero">
+  <div class="hero-grid">
+    <div>
+      <div class="hero-label">Portal da Disciplina</div>
+      <h2>Estatística para <em>decisões</em> que importam</h2>
+      <p class="hero-desc">
+        Materiais, simuladores e referências para a disciplina de Análise de Dados II.
+        O foco é desenvolver o raciocínio inferencial — da estimativa ao teste de hipóteses —
+        com rigor e aplicação prática em contextos de logística e operações.
+      </p>
+    </div>
+    <div class="hero-decoration">
+      μ₀ ± z·σ/√n<br>
+      ─────────────<br>
+      H₀: μ = μ₀<br>
+      H₁: μ ≠ μ₀<br>
+      ─────────────<br>
+      α = P(Rej H₀|H₀)<br>
+      β = P(Mant H₀|H₁)<br>
+      ─────────────<br>
+      1 − β = Poder
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ INFO DA DISCIPLINA -->
+<section>
+  <div class="section-header">
+    <span class="section-number">01 —</span>
+    <h2 class="section-title">Informações da Disciplina</h2>
+  </div>
+  <dl class="info-row">
+    <div class="info-block">
+      <dt>Curso</dt>
+      <dd>Tecnologia em Logística</dd>
+    </div>
+    <div class="info-block">
+      <dt>Disciplina</dt>
+      <dd>Análise de Dados II</dd>
+    </div>
+    <div class="info-block">
+      <dt>Carga Horária</dt>
+      <dd>80 h/a</dd>
+    </div>
+    <div class="info-block">
+      <dt>Professor</dt>
+      <dd>André Lemos</dd>
+    </div>
+    <div class="info-block">
+      <dt>Campus</dt>
+      <dd>Uberlândia Centro</dd>
+    </div>
+    <div class="info-block">
+      <dt>Repositório</dt>
+      <dd><a href="https://github.com/aslemos-iftm/adII-iftm" target="_blank">GitHub ↗</a></dd>
+    </div>
+  </dl>
+</section>
+
+<!-- ══════════════════════════════════════════ SIMULADORES -->
+<section>
+  <div class="section-header">
+    <span class="section-number">02 —</span>
+    <h2 class="section-title">Simuladores Interativos</h2>
+  </div>
+  <p style="font-size:0.92rem; color:var(--ink-soft); max-width:600px; margin-bottom:32px; line-height:1.7;">
+    Ferramentas visuais para explorar os conceitos de forma dinâmica.
+    Ajuste os parâmetros e observe como α, β e o poder do teste se relacionam.
+  </p>
+  <div class="cards-grid">
+
+    <!-- CARD 1 -->
+    <a class="card" href="th_te_unicaudal.html" target="_blank">
+      <span class="card-tag tag-simulador">Simulador</span>
+      <h3 class="card-title">Teste de Hipóteses<br>Tipos de Erro — Unicaudal</h3>
+      <p class="card-desc">
+        Visualize a distribuição sob H₀ e sob H₁, a região crítica e as áreas
+        de α (falso alarme) e β (camuflagem). Controle n, α e a estimativa observada.
+      </p>
+      <span class="card-arrow">Abrir simulador</span>
+    </a>
+
+    <!-- CARD 2 -->
+    <a class="card" href="th_te_bicaudal.html" target="_blank">
+      <span class="card-tag tag-simulador">Simulador</span>
+      <h3 class="card-title">Teste de Hipóteses<br>Tipos de Erro — Bicaudal</h3>
+      <p class="card-desc">
+        Versão bicaudal: o orçamento de α é dividido nas duas caudas.
+        Observe como a simetria do teste muda o comportamento de β e do poder.
+      </p>
+      <span class="card-arrow">Abrir simulador</span>
+    </a>
+
+    <!-- CARD PLACEHOLDER — adicione novos simuladores aqui -->
+    <!-- Exemplo:
+    <a class="card" href="ic_proporcao.html" target="_blank">
+      <span class="card-tag tag-simulador">Simulador</span>
+      <h3 class="card-title">Intervalo de Confiança<br>para Proporção</h3>
+      <p class="card-desc">...</p>
+      <span class="card-arrow">Abrir simulador</span>
+    </a>
+    -->
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ TÓPICOS DA EMENTA -->
+<section>
+  <div class="section-header">
+    <span class="section-number">03 —</span>
+    <h2 class="section-title">Tópicos da Ementa</h2>
+  </div>
+  <table class="ementa-table">
+    <thead>
+      <tr>
+        <th style="width:52px">#</th>
+        <th>Tópico</th>
+        <th>Conteúdo Principal</th>
+        <th style="width:120px">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="num">01</td>
+        <td>Revisão de Estatística Descritiva</td>
+        <td>Medidas de tendência central, dispersão e posição; análise exploratória</td>
+        <td><span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent2)">✓ Concluído</span></td>
+      </tr>
+      <tr>
+        <td class="num">02</td>
+        <td>Distribuições de Probabilidade</td>
+        <td>Binomial, Poisson, Normal; aproximações e condições de uso</td>
+        <td><span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent2)">✓ Concluído</span></td>
+      </tr>
+      <tr>
+        <td class="num">03</td>
+        <td>Distribuição Amostral</td>
+        <td>Teorema do Limite Central; distribuição de x̄ e de p̂</td>
+        <td><span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent2)">✓ Concluído</span></td>
+      </tr>
+      <tr>
+        <td class="num">04</td>
+        <td>Estimação por Intervalo</td>
+        <td>IC para média e proporção; margem de erro; tamanho amostral</td>
+        <td><span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent3)">→ Em andamento</span></td>
+      </tr>
+      <tr>
+        <td class="num">05</td>
+        <td>Testes de Hipóteses</td>
+        <td>H₀ e H₁; erros tipo I e II; valor-p; poder do teste; uni e bicaudal</td>
+        <td><span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent3)">→ Em andamento</span></td>
+      </tr>
+      <tr>
+        <td class="num">06</td>
+        <td>Testes para Médias e Proporções</td>
+        <td>Teste Z; teste t de Student; teste para proporção</td>
+        <td><span style="font-family:var(--mono);font-size:0.7rem;color:#aaa)">· Previsto</span></td>
+      </tr>
+      <tr>
+        <td class="num">07</td>
+        <td>Correlação e Regressão Linear</td>
+        <td>Coeficiente de Pearson; regressão simples; diagnóstico do modelo</td>
+        <td><span style="font-family:var(--mono);font-size:0.7rem;color:#aaa">· Previsto</span></td>
+      </tr>
+      <tr>
+        <td class="num">08</td>
+        <td>Aplicações em Logística</td>
+        <td>Controle de qualidade; análise de demanda; indicadores operacionais</td>
+        <td><span style="font-family:var(--mono);font-size:0.7rem;color:#aaa">· Previsto</span></td>
+      </tr>
+      <!-- Adicione novos tópicos aqui seguindo o padrão acima -->
+    </tbody>
+  </table>
+</section>
+
+<!-- ══════════════════════════════════════════ MATERIAIS (seção para crescer) -->
+<section>
+  <div class="section-header">
+    <span class="section-number">04 —</span>
+    <h2 class="section-title">Materiais de Apoio</h2>
+  </div>
+  <div class="cards-grid">
+
+    <!-- Adicione materiais aqui conforme forem disponibilizados -->
+    <!-- Exemplos de cards prontos para usar: -->
+
+    <div class="card card-disabled">
+      <span class="card-tag tag-em-breve">Em breve</span>
+      <h3 class="card-title">Notas de Aula<br>Estimação por Intervalo</h3>
+      <p class="card-desc">Desenvolvimento teórico completo com exemplos resolvidos.</p>
+    </div>
+
+    <div class="card card-disabled">
+      <span class="card-tag tag-em-breve">Em breve</span>
+      <h3 class="card-title">Lista de Exercícios<br>Testes de Hipóteses</h3>
+      <p class="card-desc">Exercícios graduados com gabarito comentado.</p>
+    </div>
+
+    <div class="card card-disabled">
+      <span class="card-tag tag-em-breve">Em breve</span>
+      <h3 class="card-title">Tabelas Estatísticas</h3>
+      <p class="card-desc">Tabela Z, tabela t e tabela χ² em formato imprimível.</p>
+    </div>
+
+    <!--
+    PARA ADICIONAR UM MATERIAL:
+    Copie o bloco abaixo, remova o comentário, ajuste os campos e troque
+    "card-disabled" por "card" e o tag para tag-teoria / tag-exercicio / tag-referencia
+
+    <a class="card" href="caminho/para/arquivo.pdf" target="_blank">
+      <span class="card-tag tag-teoria">Teoria</span>
+      <h3 class="card-title">Título do Material</h3>
+      <p class="card-desc">Descrição breve do conteúdo.</p>
+      <span class="card-arrow">Abrir</span>
+    </a>
+    -->
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ FOOTER -->
+<footer>
+  <p>IFTM · Campus Uberlândia Centro · Análise de Dados II</p>
+  <p>
+    <a href="https://github.com/aslemos-iftm/adII-iftm" target="_blank">github.com/aslemos-iftm/adII-iftm</a>
+  </p>
+</footer>
+
+</body>
+</html>
