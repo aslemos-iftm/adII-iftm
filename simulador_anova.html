@@ -130,21 +130,21 @@
     <h1>Simulador ANOVA: O Peso da Incerteza</h1>
     
     <div class="guia-leitura">
-        <h3>🔍 Dicas de Leitura para a Tomada de Decisão</h3>
+        <h3>🔍 Dicas de leitura para a tomada de decisão</h3>
         <ul>
-            <li><b>O Quadradinho Preto (A Média):</b> Representa o "centro de massa" da nossa amostra.</li>
-            <li><b>As Hastes (Barras de Erro):</b> É a nossa Zona de Incerteza (usando a curva <i>t</i>). A verdadeira média da população inteira está escondida em algum lugar ao longo desta linha.</li>
-            <li><b>Hastes se Sobrepondo:</b> Alta incerteza. Não podemos afirmar matematicamente quem é melhor (A ANOVA falha em rejeitar H0).</li>
-            <li><b>Hastes Separadas:</b> A incerteza caiu. Temos lastro para afirmar que as máquinas/grupos são estatisticamente diferentes (A ANOVA rejeita H0).</li>
+            <li><b>O quadradinho preto (a média):</b> representa o "centro de massa" da nossa amostra.</li>
+            <li><b>As hastes (barras de erro):</b> são a nossa zona de incerteza (usando a curva <i>t</i>). A verdadeira média da população inteira está escondida em algum lugar ao longo desta linha.</li>
+            <li><b>Hastes se sobrepondo:</b> alta incerteza. Não podemos afirmar matematicamente quem é melhor (a ANOVA falha em rejeitar H<sub>0</sub>).</li>
+            <li><b>Hastes separadas:</b> a incerteza caiu. Temos lastro para afirmar que as máquinas/grupos são estatisticamente diferentes (a ANOVA rejeita H<sub>0</sub>).</li>
         </ul>
     </div>
 
     <div class="controls">
         <div class="slider-group">
-            <label for="nSlider">Tamanho da Amostra (n): <span id="nValue">5</span></label>
+            <label for="nSlider">Tamanho da amostra (n): <span id="nValue">5</span></label>
             <input type="range" id="nSlider" min="3" max="100" value="5">
         </div>
-        <button id="btnRegenerate">🎲 Sorteio: Gerar Nova Amostra</button>
+        <button id="btnRegenerate">🎲 Gerar Novas Amostras</button>
     </div>
 
     <div class="dashboard">
@@ -153,7 +153,7 @@
             <div class="value" id="fValue">--</div>
         </div>
         <div class="metric">
-            <div class="label">F Crítico (α=5%)</div>
+            <div class="label">F crítico (α=5%)</div>
             <div class="value" id="fcritValue">--</div>
         </div>
         <div class="metric">
