@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador: O Poder da ANOVA e o Tamanho da Amostra</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            text-align: center;
+            margin-top: 0;
+        }
+        p.description {
+            text-align: center;
+            color: #555;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #eef2f5;
+            border-radius: 6px;
+        }
+        .controls label {
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        input[type="range"] {
+            width: 300px;
+            margin-right: 15px;
+        }
+        .dashboard {
+            display: flex;
+            justify-content: space-around;
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .metric {
+            text-align: center;
+        }
+        .metric .label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+        .metric .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .significant {
+            color: #2ecc71; /* Verde para H0 Rejeitada */
+        }
+        .not-significant {
+            color: #e74c3c; /* Vermelho para Falha em Rejeitar */
+        }
+        #chart {
+            display: flex;
+            justify-content: center;
+        }
+        .point {
+            fill-opacity: 0.5;
+        }
+        .mean-point {
+            fill: black;
+            stroke: white;
+            stroke-width: 2px;
+        }
+        .error-bar {
+            stroke: black;
+            stroke-width: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Simulador ANOVA: O Efeito do Tamanho da Amostra (n)</h1>
+    <p class="description">
+        Este simulador gera 3 grupos com médias populacionais ligeiramente diferentes (A=10, B=11, C=12). 
+        Observe como as faixas de incerteza (barras pretas) encolhem e o Teste F passa a detectar a diferença à medida que <i>n</i> aumenta.
+    </p>
+
+    <div class="controls">
+        <label for="nSlider">Tamanho da Amostra por Grupo (n): <span id="nValue">5</span></label>
+        <input type="range" id="nSlider" min="3" max="100" value="5">
+    </div>
+
+    <div class="dashboard">
+        <div class="metric">
+            <div class="label">Estatística F (F-obs)</div>
+            <div class="value" id="fValue">--</div>
+        </div>
+        <div class="metric">
+            <div class="label">Valor Crítico (α = 5%)</div>
+            <div class="value" id="fcritValue">--</div>
+        </div>
+        <div class="metric">
+            <div class="label">p-valor</div>
+            <div class="value" id="pValue">--</div>
+        </div>
+        <div class="metric">
+            <div class="label">Veredito</div>
+            <div class="value" id="verdict">--</div>
+        </div>
+    </div>
+
+    <div id="chart"></div>
+</div>
+
+<script>
+    // Parâmetros Populacionais (O "Segredo" que o teste tenta descobrir)
+    const popA = { mean: 10, stdDev: 3 };
+    const popB = { mean: 11, stdDev: 3 };
+    const popC = { mean: 12, stdDev: 3 };
+
+    // Configurações do Gráfico D3
+    const width = 800;
+    const height = 400;
+    const margin = { top: 20, right: 30, bottom: 40, left: 50 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+
+    const svg = d3.select("#chart")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const xScale = d3.scaleBand()
+        .domain(["Grupo A", "Grupo B", "Grupo C"])
+        .range([0, innerWidth])
+        .padding(0.4);
+
+    const yScale = d3.scaleLinear()
+        .domain([0, 25])
+        .range([innerHeight, 0]);
+
+    // Eixos
+    svg.append("g")
+        .attr("transform", `translate(0,${innerHeight})`)
+        .call(d3.axisBottom(xScale))
+        .attr("font-size", "14px");
+
+    svg.append("g")
+        .call(d3.axisLeft(yScale));
+
+    // Paleta de cores para os grupos
+    const colorScale = d3.scaleOrdinal()
+        .domain(["Grupo A", "Grupo B", "Grupo C"])
+        .range(["#3498db", "#e67e22", "#9b59b6"]);
+
+    // Função para gerar números aleatórios Normais (Box-Muller transform)
+    function randomNormal(mean, stdDev) {
+        let u1 = Math.random();
+        let u2 = Math.random();
+        let z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+        return z0 * stdDev + mean;
+    }
+
+    // Função principal de simulação e atualização
+    function updateSimulation(n) {
+        let data = [];
+        let means = { "Grupo A": 0, "Grupo B": 0, "Grupo C": 0 };
+        let grandTotal = 0;
+
+        // 1. Gerar Dados
+        for (let i = 0; i < n; i++) {
+            let valA = randomNormal(popA.mean, popA.stdDev);
+            let valB = randomNormal(popB.mean, popB.stdDev);
+            let valC = randomNormal(popC.mean, popC.stdDev);
+
+            data.push({ group: "Grupo A", value: valA });
+            data.push({ group: "Grupo B", value: valB });
+            data.push({ group: "Grupo C", value: valC });
+
+            means["Grupo A"] += valA;
+            means["Grupo B"] += valB;
+            means["Grupo C"] += valC;
+            grandTotal += valA + valB + valC;
+        }
+
+        // 2. Calcular Médias
+        means["Grupo A"] /= n;
+        means["Grupo B"] /= n;
+        means["Grupo C"] /= n;
+        let grandMean = grandTotal / (n * 3);
+
+        // 3. Matemática da ANOVA
+        let sqEntre = n * (Math.pow(means["Grupo A"] - grandMean, 2) + 
+                           Math.pow(means["Grupo B"] - grandMean, 2) + 
+                           Math.pow(means["Grupo C"] - grandMean, 2));
+        
+        let sqDentro = 0;
+        data.forEach(d => {
+            sqDentro += Math.pow(d.value - means[d.group], 2);
+        });
+
+        let dfEntre = 3 - 1; // k - 1
+        let dfDentro = (n * 3) - 3; // N - k
+
+        let qmEntre = sqEntre / dfEntre;
+        let qmDentro = sqDentro / dfDentro;
+
+        let fObs = qmEntre / qmDentro;
+
+        // Usando jStat para calcular p-valor e F crítico
+        let pValue = 1 - jStat.centralF.cdf(fObs, dfEntre, dfDentro);
+        let fCrit = jStat.centralF.inv(0.95, dfEntre, dfDentro);
+
+        // Erro Padrão Global (Assumindo variâncias iguais - Pooled Variance)
+        // Intervalo de Confiança ~ 95% (Multiplicador t de Student aproximado ~ 1.96 para amostras grandes, usando jStat para exatidão)
+        let tCrit = jStat.studentt.inv(0.975, dfDentro); 
+        let marginOfError = tCrit * Math.sqrt(qmDentro / n);
+
+        // 4. Atualizar Painel (Dashboard)
+        document.getElementById("fValue").innerText = fObs.toFixed(2);
+        document.getElementById("fcritValue").innerText = fCrit.toFixed(2);
+        
+        let pText = pValue < 0.001 ? "< 0.001" : pValue.toFixed(4);
+        let pEl = document.getElementById("pValue");
+        pEl.innerText = pText;
+
+        let verdictEl = document.getElementById("verdict");
+        if (pValue < 0.05) {
+            verdictEl.innerText = "DIFERENTES (Rejeita H0)";
+            verdictEl.className = "value significant";
+            pEl.className = "value significant";
+        } else {
+            verdictEl.innerText = "IGUAIS (Falha ao Rejeitar)";
+            verdictEl.className = "value not-significant";
+            pEl.className = "value not-significant";
+        }
+
+        // 5. Atualizar Gráfico D3
+        // Limpar desenhos anteriores
+        svg.selectAll(".point").remove();
+        svg.selectAll(".summary").remove();
+
+        // Jitter horizontal para espalhar os pontos
+        const jitterWidth = xScale.bandwidth() * 0.4;
+
+        // Desenhar Pontos Brutos
+        svg.selectAll(".point")
+            .data(data)
+            .enter()
+            .append("circle")
+            .attr("class", "point")
+            .attr("cx", d => xScale(d.group) + xScale.bandwidth()/2 + (Math.random() - 0.5) * jitterWidth)
+            .attr("cy", d => yScale(d.value))
+            .attr("r", 4)
+            .attr("fill", d => colorScale(d.group));
+
+        // Dados de Resumo (Médias e Erros)
+        let summaryData = [
+            { group: "Grupo A", mean: means["Grupo A"], ci: marginOfError },
+            { group: "Grupo B", mean: means["Grupo B"], ci: marginOfError },
+            { group: "Grupo C", mean: means["Grupo C"], ci: marginOfError }
+        ];
+
+        let summaryGroup = svg.selectAll(".summary")
+            .data(summaryData)
+            .enter()
+            .append("g")
+            .attr("class", "summary");
+
+        // Linhas de Erro (Barras Verticais)
+        summaryGroup.append("line")
+            .attr("class", "error-bar")
+            .attr("x1", d => xScale(d.group) + xScale.bandwidth()/2)
+            .attr("x2", d => xScale(d.group) + xScale.bandwidth()/2)
+            .attr("y1", d => yScale(d.mean + d.ci))
+            .attr("y2", d => yScale(d.mean - d.ci));
+
+        // Pés das barras de erro (Traços Horizontais)
+        let capWidth = 10;
+        summaryGroup.append("line")
+            .attr("class", "error-bar")
+            .attr("x1", d => xScale(d.group) + xScale.bandwidth()/2 - capWidth/2)
+            .attr("x2", d => xScale(d.group) + xScale.bandwidth()/2 + capWidth/2)
+            .attr("y1", d => yScale(d.mean + d.ci))
+            .attr("y2", d => yScale(d.mean + d.ci));
+            
+        summaryGroup.append("line")
+            .attr("class", "error-bar")
+            .attr("x1", d => xScale(d.group) + xScale.bandwidth()/2 - capWidth/2)
+            .attr("x2", d => xScale(d.group) + xScale.bandwidth()/2 + capWidth/2)
+            .attr("y1", d => yScale(d.mean - d.ci))
+            .attr("y2", d => yScale(d.mean - d.ci));
+
+        // Pontos centrais da Média (Quadrados maiores)
+        summaryGroup.append("rect")
+            .attr("class", "mean-point")
+            .attr("x", d => xScale(d.group) + xScale.bandwidth()/2 - 6)
+            .attr("y", d => yScale(d.mean) - 6)
+            .attr("width", 12)
+            .attr("height", 12);
+    }
+
+    // Inicialização
+    let slider = document.getElementById("nSlider");
+    let nDisplay = document.getElementById("nValue");
+
+    slider.addEventListener("input", function() {
+        let n = parseInt(this.value);
+        nDisplay.innerText = n;
+        updateSimulation(n);
+    });
+
+    // Rodar primeira vez
+    updateSimulation(parseInt(slider.value));
+
+</script>
+</body>
+</html>
