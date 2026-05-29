@@ -2,11 +2,23 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Visualizador: Correlação de Spearman</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratório Spearman: Geometria e Distribuição t</title>
     <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --warning: #f1c40f;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --bg-color: #ecf0f1;
+            --box-x: #34495e;
+            --box-y: #e67e22;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
+            background-color: var(--bg-color);
             color: #333;
             margin: 0;
             padding: 20px;
@@ -14,238 +26,217 @@
             flex-direction: column;
             align-items: center;
         }
-        h2 { color: #2c3e50; margin-top: 0; }
+
+        h2 { color: var(--primary); margin-top: 0; margin-bottom: 5px; text-align: center; }
+        p.subtitle { color: #7f8c8d; text-align: center; margin-bottom: 20px; font-size: 0.95em; }
+
         .dashboard {
             display: flex;
-            gap: 30px;
-            background: #fff;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            max-width: 1100px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        /* Painel Gráfico */
-        .graphic-panel {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 350px;
-        }
-        .headers {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #2c3e50;
-        }
-        .ranking-container {
-            display: flex;
-            position: relative;
-            height: 480px; /* 8 rows * 60px */
-            width: 100%;
-            background: #fdfdfd;
-            border: 1px solid #eee;
-            border-radius: 8px;
-        }
-        .col-x, .col-y {
-            display: flex;
-            flex-direction: column;
-            width: 50px;
-            z-index: 2;
-        }
-        .col-x { margin-right: auto; }
-        .col-y { margin-left: auto; }
-        
-        .node {
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-sizing: border-box;
-        }
-        .box {
-            width: 40px;
-            height: 40px;
-            background: #3498db;
-            color: white;
-            font-weight: bold;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            position: relative;
-        }
-        .box-y { background: #e67e22; }
-        
-        .controls {
-            position: absolute;
-            right: -25px;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .controls button {
-            background: #ecf0f1;
-            border: 1px solid #bdc3c7;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 10px;
-            padding: 2px 5px;
-        }
-        .controls button:hover { background: #d5dbdb; }
-        .controls button:disabled { opacity: 0.3; cursor: not-allowed; }
-
-        .svg-lines {
-            position: absolute;
-            top: 0;
-            left: 50px;
-            width: 250px;
-            height: 480px;
-            z-index: 1;
-            pointer-events: none;
-        }
-        line {
-            stroke: #bdc3c7;
-            stroke-width: 2;
-            transition: stroke 0.3s;
-        }
-
-        /* Painel Matemático */
-        .math-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
+            flex-wrap: wrap;
             gap: 20px;
-        }
-        table {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 1200px;
             width: 100%;
-            border-collapse: collapse;
-            text-align: center;
-            font-size: 0.9em;
+            box-sizing: border-box;
         }
-        th, td { border: 1px solid #ddd; padding: 6px; }
-        th { background-color: #ecf0f1; color: #2c3e50; }
-        
-        .card {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 15px;
-        }
-        .formula { font-family: 'Courier New', Courier, monospace; font-size: 1.1em; }
-        .highlight { font-weight: bold; color: #e74c3c; font-size: 1.2em; }
-        .highlight-rs { font-weight: bold; color: #2980b9; font-size: 1.2em; }
 
-        /* Termômetro de Caos */
-        .thermometer-container {
-            width: 100%;
-            height: 20px;
-            background: #eee;
-            border-radius: 10px;
+        /* PAINEL GEOMÉTRICO (Esquerda) */
+        .geom-panel {
+            flex: 0 0 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .ranking-container {
             position: relative;
-            overflow: hidden;
+            width: 250px;
+            height: 480px; /* 8 linhas de 60px */
             margin-top: 10px;
         }
-        .thermometer-fill {
-            height: 100%;
-            background: linear-gradient(to right, #2ecc71, #f1c40f, #e74c3c);
-            width: 0%;
-            transition: width 0.3s ease-out;
+
+        .col-x, .col-y { position: absolute; top: 0; width: 50px; height: 100%; display: flex; flex-direction: column; z-index: 2; }
+        .col-x { left: 0; }
+        .col-y { right: 0; }
+
+        .node { height: 60px; display: flex; align-items: center; justify-content: center; }
+        
+        .box {
+            width: 45px; height: 45px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: white;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.16);
+            user-select: none;
+            transition: transform 0.1s;
         }
-        .thermometer-labels {
+        .box-x { background: var(--box-x); }
+        .box-y { background: var(--box-y); cursor: grab; border: 2px solid transparent; }
+        .box-y:active { cursor: grabbing; transform: scale(1.1); }
+        .box-y.drag-over { border-color: var(--primary); background: #d35400; transform: scale(1.1); }
+
+        .svg-lines { position: absolute; top: 0; left: 50px; width: 150px; height: 100%; z-index: 1; pointer-events: none; }
+        line { stroke-width: 3; transition: stroke 0.3s; }
+
+        /* PAINEL MATEMÁTICO (Centro) */
+        .math-panel {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.9em; background: white; }
+        th, td { border: 1px solid #ddd; padding: 6px; }
+        th { background-color: var(--primary); color: white; }
+
+        .card { background: #fdfdfd; border: 1px solid #eee; border-radius: 8px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .formula { font-family: monospace; font-size: 1.1em; background: #f4f7f6; padding: 10px; border-radius: 5px; margin-top: 5px; }
+        .highlight { font-weight: bold; color: var(--accent); }
+
+        /* PAINEL GRÁFICO DA CURVA T (Direita/Inferior) */
+        .chart-panel {
+            flex: 1;
+            min-width: 400px;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .controls {
             display: flex;
             justify-content: space-between;
-            font-size: 0.8em;
-            color: #7f8c8d;
-            margin-top: 5px;
+            align-items: center;
+            margin-bottom: 15px;
+            background: #ecf0f1;
+            padding: 10px 15px;
+            border-radius: 6px;
         }
+
+        select { padding: 5px; font-size: 1em; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;}
+        
+        canvas {
+            width: 100%;
+            height: 250px;
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+
+        .verdict {
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .verdict.reject { background: #fadbd8; color: #c0392b; }
+        .verdict.accept { background: #eaeded; color: #7f8c8d; }
+
     </style>
 </head>
 <body>
 
     <h2>A Mecânica de Spearman (n = 8)</h2>
-    
+    <p class="subtitle">Arraste os blocos laranjas (Y) e solte sobre outros para trocar suas posições. Observe o impacto geométrico no cálculo do Alfa e na Curva t.</p>
+
     <div class="dashboard">
-        <div class="graphic-panel">
-            <div class="headers">
-                <span>Posto X (Fixo)</span>
-                <span>Posto Y (Móvel)</span>
+        
+        <div class="geom-panel">
+            <strong>Descolamento Geométrico</strong>
+            <div style="display:flex; width: 100%; justify-content: space-between; font-size: 0.8em; margin-top:10px; font-weight:bold;">
+                <span>X (Fixo)</span>
+                <span>Y (Móvel)</span>
             </div>
             <div class="ranking-container">
                 <div class="col-x" id="colX"></div>
                 <svg class="svg-lines" id="svgLines"></svg>
                 <div class="col-y" id="colY"></div>
             </div>
-            <p style="font-size: 0.8em; color: #7f8c8d; text-align: center; margin-top: 15px;">
-                *Cada linha representa 1 indivíduo. A inclinação da linha é o descolamento geométrico (d).
-            </p>
         </div>
 
         <div class="math-panel">
-            <div class="card">
+            <div class="card" style="padding:0; overflow:hidden;">
                 <table>
                     <thead>
-                        <tr>
-                            <th>Indivíduo</th>
-                            <th>X</th>
-                            <th>Y</th>
-                            <th>d = (X - Y)</th>
-                            <th>d²</th>
-                        </tr>
+                        <tr><th>Ind.</th><th>X</th><th>Y</th><th>d</th><th>d²</th></tr>
                     </thead>
                     <tbody id="dataTable"></tbody>
                 </table>
             </div>
-
+            
             <div class="card">
-                <strong>1. A Penalidade Geométrica (Caos Gerado)</strong><br>
-                <span>Soma de d² = </span> <span class="highlight" id="sumD2">0</span>
-                
-                <div class="thermometer-container">
-                    <div class="thermometer-fill" id="chaosBar"></div>
-                </div>
-                <div class="thermometer-labels">
-                    <span>Ordem (0)</span>
-                    <span>Acaso (84)</span>
-                    <span>Inversão Total (168)</span>
-                </div>
+                <strong>1. A Penalidade (Soma de d²)</strong>
+                <div class="formula">Σd² = <span id="valD2" class="highlight" style="color:var(--danger)">0</span></div>
             </div>
 
             <div class="card">
-                <strong>2. O Coeficiente (Ancoragem e Desconto)</strong><br>
-                <div class="formula">
-                    r_s = 1 - [ 6 * <span id="f_d2">0</span> ] / [ 8 * (64 - 1) ]<br>
-                    r_s = <span class="highlight-rs" id="valRs">1.000</span>
-                </div>
+                <strong>2. Coeficiente de Spearman (rs)</strong>
+                <div class="formula">rs = 1 - (6 * Σd²) / (8 * 63)<br>rs = <span id="valRs" class="highlight">1.000</span></div>
             </div>
-
+            
             <div class="card">
-                <strong>3. Teste t de Significância (Sinal vs Ruído)</strong><br>
-                <div class="formula">
-                    t = <span id="f_rs">1.000</span> * √[ 6 / (1 - <span id="f_rs2">1.000</span>) ]<br>
-                    t = <span class="highlight" id="valT" style="color: #8e44ad;">∞</span>
-                </div>
-                <div style="font-size: 0.85em; color: #666; margin-top: 8px;" id="tConclusion">
-                    Relação perfeita detectada. Não há ruído.
-                </div>
+                <strong>3. Estatística do Teste (t calculado)</strong>
+                <div style="font-size: 0.85em; color: #666;">gl = n - 2 = 6</div>
+                <div class="formula">t = rs * √[ 6 / (1 - rs²) ]<br>t_calc = <span id="valT" class="highlight" style="color: purple;">∞</span></div>
             </div>
         </div>
+
+        <div class="chart-panel">
+            <div class="controls">
+                <div>
+                    <label for="alphaSelect"><strong>Nível de Significância (α): </strong></label>
+                    <select id="alphaSelect" onchange="updateAll()">
+                        <option value="0.10">α = 0.10 (10%)</option>
+                        <option value="0.05" selected>α = 0.05 (5%)</option>
+                        <option value="0.01">α = 0.01 (1%)</option>
+                    </select>
+                </div>
+                <div>t crítico: ±<span id="tCritDisplay">2.447</span></div>
+            </div>
+            
+            <canvas id="tChart" width="600" height="250"></canvas>
+            
+            <div id="verdictBox" class="verdict accept">
+                Aguardando cálculo...
+            </div>
+        </div>
+
     </div>
 
     <script>
         const N = 8;
-        const MAX_CHAOS = (Math.pow(N, 3) - N) / 3; // 168 para n=8
-        
-        // Indivíduos representados por letras para facilitar visualização
         const individuals = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
         
-        // Estado inicial: Y = X (Correlação Perfeita)
-        // stateY armazena qual indivíduo (0 a 7) está em qual posição (0 a 7) do ranking Y
-        let stateY = [0, 1, 2, 3, 4, 5, 6, 7];
+        // Estado: posição [0 a 7] contém qual índice de indivíduo
+        let stateY = [0, 1, 2, 3, 4, 5, 6, 7]; 
+
+        // Tabela de valores críticos t de Student (bicaudal) para gl = 6
+        const tCriticalValues = {
+            "0.10": 1.943,
+            "0.05": 2.447,
+            "0.01": 3.707
+        };
+
+        // Função Aproximada da PDF da curva t (gl=6) para desenhar o gráfico
+        // f(t) = C * (1 + t^2 / 6)^(-3.5)
+        function tPdf(t) {
+            return Math.pow(1 + (t * t) / 6, -3.5);
+        }
+
+        let draggedIndex = null;
 
         function init() {
             renderX();
@@ -256,10 +247,7 @@
             const colX = document.getElementById('colX');
             colX.innerHTML = '';
             for (let i = 0; i < N; i++) {
-                colX.innerHTML += `
-                    <div class="node">
-                        <div class="box">${individuals[i]}<br><small style="font-size:10px">${i+1}</small></div>
-                    </div>`;
+                colX.innerHTML += `<div class="node"><div class="box box-x">${individuals[i]}</div></div>`;
             }
         }
 
@@ -268,64 +256,74 @@
             colY.innerHTML = '';
             for (let i = 0; i < N; i++) {
                 const indIndex = stateY[i];
-                colY.innerHTML += `
-                    <div class="node">
-                        <div class="box box-y">${individuals[indIndex]}<br><small style="font-size:10px">${i+1}</small>
-                            <div class="controls">
-                                <button onclick="moveUp(${i})" ${i === 0 ? 'disabled' : ''}>▲</button>
-                                <button onclick="moveDown(${i})" ${i === N-1 ? 'disabled' : ''}>▼</button>
-                            </div>
-                        </div>
-                    </div>`;
+                let node = document.createElement('div');
+                node.className = 'node';
+                
+                let box = document.createElement('div');
+                box.className = 'box box-y';
+                box.innerText = individuals[indIndex];
+                box.draggable = true;
+                
+                // Eventos de Drag & Drop
+                box.addEventListener('dragstart', (e) => {
+                    draggedIndex = i;
+                    e.dataTransfer.effectAllowed = 'move';
+                    setTimeout(() => box.style.opacity = '0.5', 0);
+                });
+                
+                box.addEventListener('dragend', () => {
+                    box.style.opacity = '1';
+                    draggedIndex = null;
+                });
+                
+                box.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if(draggedIndex !== i) box.classList.add('drag-over');
+                });
+                
+                box.addEventListener('dragleave', () => box.classList.remove('drag-over'));
+                
+                box.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    box.classList.remove('drag-over');
+                    if (draggedIndex !== null && draggedIndex !== i) {
+                        // Faz o SWAP (Troca) das posições
+                        let temp = stateY[draggedIndex];
+                        stateY[draggedIndex] = stateY[i];
+                        stateY[i] = temp;
+                        updateAll();
+                    }
+                });
+
+                node.appendChild(box);
+                colY.appendChild(node);
             }
         }
 
-        function moveUp(index) {
-            if (index > 0) {
-                [stateY[index], stateY[index - 1]] = [stateY[index - 1], stateY[index]];
-                updateAll();
-            }
-        }
+        function drawLines() {
+            const svg = document.getElementById('svgLines');
+            svg.innerHTML = '';
+            for (let ind = 0; ind < N; ind++) {
+                const posY_left = (ind * 60) + 30; // Ranking X
+                const rankY = stateY.indexOf(ind); // Ranking Y
+                const posY_right = (rankY * 60) + 30;
+                const diff = Math.abs(ind - rankY);
+                
+                let color = '#bdc3c7'; // cinza (normal)
+                if (diff >= 4) color = '#e74c3c'; // vermelho (alta ruptura)
+                else if (diff >= 2) color = '#f1c40f'; // amarelo (média ruptura)
 
-        function moveDown(index) {
-            if (index < N - 1) {
-                [stateY[index], stateY[index + 1]] = [stateY[index + 1], stateY[index]];
-                updateAll();
+                svg.innerHTML += `<line x1="0" y1="${posY_left}" x2="150" y2="${posY_right}" stroke="${color}" />`;
             }
         }
 
         function updateAll() {
             renderY();
             drawLines();
-            calculateMath();
-        }
-
-        function drawLines() {
-            const svg = document.getElementById('svgLines');
-            svg.innerHTML = '';
             
-            // Altura do container é 480px. 8 nós. Cada nó tem 60px.
-            // O centro vertical do nó i é (i * 60) + 30
-            for (let ind = 0; ind < N; ind++) {
-                const posY_left = (ind * 60) + 30; // Posição no ranking X (Fixo)
-                
-                const rankY = stateY.indexOf(ind); // Posição do indivíduo no ranking Y
-                const posY_right = (rankY * 60) + 30;
-
-                const diff = Math.abs(ind - rankY);
-                // Cor da linha baseada no grau de deslocamento (vermelho para grandes rupturas)
-                let color = '#bdc3c7';
-                if (diff >= 4) color = '#e74c3c';
-                else if (diff >= 2) color = '#f1c40f';
-
-                svg.innerHTML += `<line x1="0" y1="${posY_left}" x2="250" y2="${posY_right}" stroke="${color}" />`;
-            }
-        }
-
-        function calculateMath() {
+            // 1. Matemática de Spearman
             const tbody = document.getElementById('dataTable');
             tbody.innerHTML = '';
-            
             let sumD2 = 0;
 
             for (let ind = 0; ind < N; ind++) {
@@ -334,55 +332,123 @@
                 const d = xVal - yVal;
                 const d2 = d * d;
                 sumD2 += d2;
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td><strong>${individuals[ind]}</strong></td>
-                        <td>${xVal}</td>
-                        <td>${yVal}</td>
-                        <td>${d > 0 ? '+'+d : d}</td>
-                        <td>${d2}</td>
-                    </tr>`;
+                tbody.innerHTML += `<tr><td><strong>${individuals[ind]}</strong></td><td>${xVal}</td><td>${yVal}</td><td>${d > 0 ? '+'+d : d}</td><td>${d2}</td></tr>`;
             }
 
-            // Atualiza Interface Matemática
-            document.getElementById('sumD2').innerText = sumD2;
-            document.getElementById('f_d2').innerText = sumD2;
-            
-            // Termômetro
-            const chaosPercent = (sumD2 / MAX_CHAOS) * 100;
-            document.getElementById('chaosBar').style.width = chaosPercent + '%';
+            document.getElementById('valD2').innerText = sumD2;
 
-            // Coeficiente (rs)
+            // 2. Coeficiente
             const rs = 1 - ((6 * sumD2) / (N * (N * N - 1)));
-            const rsStr = rs.toFixed(3);
-            document.getElementById('valRs').innerText = rsStr;
-            document.getElementById('f_rs').innerText = rsStr;
-            
-            // Teste t
-            const rs2 = rs * rs;
-            document.getElementById('f_rs2').innerText = rs2.toFixed(3);
-            
-            const tConclusion = document.getElementById('tConclusion');
+            document.getElementById('valRs').innerText = rs.toFixed(3);
+
+            // 3. Teste t
+            let tCalc = 0;
             if (Math.abs(rs) === 1) {
-                document.getElementById('valT').innerText = rs > 0 ? '∞' : '-∞';
-                tConclusion.innerText = "Correlação perfeita detectada. Não há ruído remanescente para o denominador do teste t.";
+                tCalc = rs > 0 ? 999 : -999; // Representação do infinito
+                document.getElementById('valT').innerText = rs > 0 ? '+∞' : '-∞';
             } else {
-                // gl = 8 - 2 = 6
-                const t = rs * Math.sqrt(6 / (1 - rs2));
-                document.getElementById('valT').innerText = t.toFixed(3);
-                
-                // Análise simples de significância para gl=6, alfa=0.05 bicaudal (crítico aprox 2.447)
-                if (Math.abs(t) >= 2.447) {
-                    tConclusion.innerHTML = "<span style='color:#2ecc71'>Significativo (Rejeita H₀): O sinal superou o ruído de fundo.</span>";
-                } else {
-                    tConclusion.innerHTML = "<span style='color:#e74c3c'>Não Significativo (Aceita H₀): A bagunça geométrica não permite afirmar padrão.</span>";
+                tCalc = rs * Math.sqrt(6 / (1 - rs * rs));
+                document.getElementById('valT').innerText = tCalc.toFixed(3);
+            }
+
+            // 4. Interface Crítica e Gráfico
+            const alphaStr = document.getElementById('alphaSelect').value;
+            const tCrit = tCriticalValues[alphaStr];
+            document.getElementById('tCritDisplay').innerText = tCrit;
+
+            drawChart(tCalc, tCrit);
+            updateVerdict(tCalc, tCrit);
+        }
+
+        function drawChart(tCalc, tCrit) {
+            const canvas = document.getElementById('tChart');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            ctx.clearRect(0, 0, w, h);
+
+            // Escala Matemática do Eixo X (-5 a +5)
+            const xMin = -5, xMax = 5;
+            const mapX = (val) => ((val - xMin) / (xMax - xMin)) * w;
+            const mapY = (val) => h - 25 - (val * (h - 40)); // Base line at h-25
+
+            // Desenhar Eixo Central (Zero) e Linha Base
+            ctx.beginPath(); ctx.moveTo(0, h-25); ctx.lineTo(w, h-25); ctx.strokeStyle = '#333'; ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(mapX(0), h-25); ctx.lineTo(mapX(0), 10); ctx.strokeStyle = '#ecf0f1'; ctx.stroke();
+
+            // Renderizar áreas (Polígonos sob a curva)
+            function fillArea(startT, endT, color) {
+                ctx.beginPath();
+                ctx.moveTo(mapX(startT), h-25);
+                for(let t = startT; t <= endT; t += 0.05) {
+                    ctx.lineTo(mapX(t), mapY(tPdf(t)));
                 }
+                ctx.lineTo(mapX(endT), mapY(tPdf(endT)));
+                ctx.lineTo(mapX(endT), h-25);
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
+
+            // 1. Zonas de Rejeição Crítica (Alfa/2) - Vermelho Claro
+            fillArea(xMin, -tCrit, 'rgba(231, 76, 60, 0.2)');
+            fillArea(tCrit, xMax, 'rgba(231, 76, 60, 0.2)');
+
+            // 2. Área do P-Valor (Sombra escura a partir do tCalc até a cauda)
+            let pColor = 'rgba(142, 68, 173, 0.6)'; // Roxo translúcido
+            let clampedT = Math.max(Math.min(tCalc, xMax), xMin); // Prender no limite visual
+            
+            if (Math.abs(clampedT) > 0) {
+                if (clampedT > 0) fillArea(clampedT, xMax, pColor);
+                else fillArea(xMin, clampedT, pColor);
+            }
+
+            // 3. Desenhar a linha principal da Curva
+            ctx.beginPath();
+            for(let t = xMin; t <= xMax; t += 0.05) {
+                let ptX = mapX(t);
+                let ptY = mapY(tPdf(t));
+                if (t === xMin) ctx.moveTo(ptX, ptY);
+                else ctx.lineTo(ptX, ptY);
+            }
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#2c3e50';
+            ctx.stroke();
+
+            // 4. Marcadores Verticais e Textos
+            function drawMarker(val, label, color, yOffset) {
+                let px = mapX(val);
+                if(px < 10) px = 10; if(px > w-10) px = w-10; // keep in bounds
+                
+                ctx.beginPath();
+                ctx.setLineDash([5, 3]);
+                ctx.moveTo(px, h-25); ctx.lineTo(px, 15 + yOffset);
+                ctx.strokeStyle = color; ctx.stroke();
+                ctx.setLineDash([]);
+                
+                ctx.fillStyle = color;
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(label, px, 10 + yOffset);
+            }
+
+            drawMarker(-tCrit, '-t_crit', '#c0392b', 0);
+            drawMarker(tCrit, 't_crit', '#c0392b', 0);
+            drawMarker(clampedT, 't_calc', 'purple', 15);
+        }
+
+        function updateVerdict(tCalc, tCrit) {
+            const box = document.getElementById('verdictBox');
+            if (Math.abs(tCalc) >= tCrit) {
+                box.className = "verdict reject";
+                box.innerHTML = `H₀ Rejeitada! O t calculado (${Math.abs(tCalc) === 999 ? '∞' : tCalc.toFixed(2)}) caiu dentro da zona crítica sombreada.<br><small>O p-valor (área roxa) é menor que o Alfa escolhido.</small>`;
+            } else {
+                box.className = "verdict accept";
+                box.innerHTML = `H₀ Aceita! O t calculado (${tCalc.toFixed(2)}) ficou no centro geométrico (zona branca).<br><small>A desordem é muito grande para afirmarmos que existe correlação.</small>`;
             }
         }
 
-        // Iniciar
-        init();
+        window.onload = init;
     </script>
 </body>
 </html>
