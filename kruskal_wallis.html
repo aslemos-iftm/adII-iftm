@@ -135,8 +135,7 @@
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Linha Crítica (Qui-Quadrado gl=2, alpha=0.05 -> 5.99) */
-        /* Máximo teórico H para N=15 é aprox 14. Então 5.99 é ~42.7% da barra */
+        /* Linha Crítica (Qui-Quadrado gl=2, alpha=0,05 -> 5,99) */
         .critical-line {
             position: absolute;
             left: 42.78%;
@@ -207,7 +206,7 @@
                     <h3>Serraria Y</h3>
                     <div class="group-stats">
                         n: <span id="nB">5</span> | Soma (R): <span id="sumB">40</span><br>
-                        Média (<span style="text-decoration:overline">R</span>): <span id="meanB">8.00</span>
+                        Média (<span style="text-decoration:overline">R</span>): <span id="meanB">8,00</span>
                     </div>
                 </div>
                 <div class="items-area" id="areaB"></div>
@@ -218,7 +217,7 @@
                     <h3>Serraria Z</h3>
                     <div class="group-stats">
                         n: <span id="nC">5</span> | Soma (R): <span id="sumC">40</span><br>
-                        Média (<span style="text-decoration:overline">R</span>): <span id="meanC">8.00</span>
+                        Média (<span style="text-decoration:overline">R</span>): <span id="meanC">8,00</span>
                     </div>
                 </div>
                 <div class="items-area" id="areaC"></div>
@@ -227,7 +226,7 @@
 
         <div class="results-panel">
             <div class="formula-display">
-                H = <span id="calcString">0,05 * ( 320,0 + 320,0 + 320,0 ) - 48</span> = <b style="color:var(--accent); font-size:1.3em;" id="hValue">0.00</b>
+                H = <span id="calcString">0,05 * ( 320,0 + 320,0 + 320,0 ) - 48</span> = <b style="color:var(--accent); font-size:1.3em;" id="hValue">0,00</b>
             </div>
 
             <div class="chart-container">
@@ -259,7 +258,7 @@
 
          N = 15;
         const H_MAX = 12.5; // Limite superior teórico aproximado para a escala visual
-        const CRITICAL_VAL = 5.99; // Qui-Quadrado para gl=2, alpha=0.05
+        const CRITICAL_VAL = 5.99; // Qui-Quadrado para gl=2, alpha=0,05
 
         // Inicializa as bolinhas na tela
         window.onload = () => {
@@ -341,7 +340,7 @@
             });
 
             // Fórmula Kruskal-Wallis: H = [12 / N(N+1)] * sumFraction - 3(N+1)
-            // Para N=15: 12/(15*16) = 12/240 = 0.05.   3*(16) = 48
+            // Para N=15: 12/(15*16) = 12/240 = 0,05.   3*(16) = 48
             let H = (0.05 * sumFraction) - 48;
             if (H < 0) H = 0; // Previne flutuações negativas minúsculas de arredondamento
 
@@ -357,7 +356,7 @@
             // Avalia Hipótese
             let statusEl = document.getElementById('statusMsg');
             if (H >= CRITICAL_VAL) {
-                statusEl.innerText = "H₀ Rejeitada (p < 0.05): Há diferença significativa! A variância entre grupos dominou o erro.";
+                statusEl.innerText = "H₀ Rejeitada (p < 0,05): Há diferença significativa! A variância entre grupos dominou o erro.";
                 statusEl.className = "status-text status-reject";
             } else {
                 statusEl.innerText = "H₀ Aceita: Não há evidência estatística de diferença. Os postos parecem misturados ao acaso.";
