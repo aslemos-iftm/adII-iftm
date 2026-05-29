@@ -371,12 +371,82 @@
             // Escala Matemática do Eixo X (-5 a +5)
             const xMin = -5, xMax = 5;
             const mapX = (val) => ((val - xMin) / (xMax - xMin)) * w;
-            const mapY = (val) => h - 25 - (val * (h - 40)); // Base line at h-25
+            const mapY = (val) => h - 25 - (val * (h - 40)); 
 
             // Desenhar Eixo Central (Zero) e Linha Base
             ctx.beginPath(); ctx.moveTo(0, h-25); ctx.lineTo(w, h-25); ctx.strokeStyle = '#333'; ctx.stroke();
             ctx.beginPath(); ctx.moveTo(mapX(0), h-25); ctx.lineTo(mapX(0), 10); ctx.strokeStyle = '#ecf0f1'; ctx.stroke();
 
+            function fillArea(startT, endT, color) {
+                ctx.beginPath();
+                ctx.moveTo(mapX(startT), h-25);
+                for(let t = startT; t <= endT; t += 0.05) {
+                    ctx.lineTo(mapX(t), mapY(tPdf(t)));
+                }
+                ctx.lineTo(mapX(endT), mapY(tPdf(endT)));
+                ctx.lineTo(mapX(endT), h-25);
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
+
+            // 1. Zonas de Rejeição Crítica
+            fillArea(xMin, -tCrit, 'rgba(231, 76, 60, 0.2)');
+            fillArea(tCrit, xMax, 'rgba(231, 76, 60, 0.2)');
+
+            // 2. Área do P-Valor (Ocultada se for infinito)
+            const isInfinity = Math.abs(tCalc) === 999;
+            let pColor = 'rgba(142, 68, 173, 0.6)';
+            
+            if (!isInfinity) {
+                let clampedT = Math.max(Math.min(tCalc, xMax), xMin);
+                if (clampedT > 0) fillArea(clampedT, xMax, pColor);
+                else fillArea(xMin, clampedT, pColor);
+            }
+
+            // 3. Desenhar a linha principal da Curva
+            ctx.beginPath();
+            for(let t = xMin; t <= xMax; t += 0.05) {
+                let ptX = mapX(t);
+                let ptY = mapY(tPdf(t));
+                if (t === xMin) ctx.moveTo(ptX, ptY);
+                else ctx.lineTo(ptX, ptY);
+            }
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#2c3e50';
+            ctx.stroke();
+
+            // 4. Marcadores Verticais e Textos
+            function drawMarker(val, label, color, yOffset) {
+                let px = mapX(val);
+                if(px < 10) px = 10; if(px > w-10) px = w-10; 
+                
+                ctx.beginPath();
+                ctx.setLineDash([5, 3]);
+                ctx.moveTo(px, h-25); ctx.lineTo(px, 15 + yOffset);
+                ctx.strokeStyle = color; ctx.stroke();
+                ctx.setLineDash([]);
+                
+                ctx.fillStyle = color;
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(label, px, 10 + yOffset);
+            }
+
+            drawMarker(-tCrit, '-t_crit', '#c0392b', 0);
+            drawMarker(tCrit, 't_crit', '#c0392b', 0);
+
+            // 5. Exibição Didática da Singularidade (Infinito)
+            if (isInfinity) {
+                ctx.fillStyle = 'purple';
+                ctx.font = 'bold 16px sans-serif';
+                ctx.textAlign = 'center';
+                let infText = tCalc > 0 ? "t → +∞ (Divisão por zero)" : "t → -∞ (Divisão por zero)";
+                ctx.fillText(infText, w / 2, 25);
+            } else {
+                let clampedT = Math.max(Math.min(tCalc, xMax), xMin);
+                drawMarker(clampedT, 't_calc', 'purple', 15);
+            }
+        }
             // Renderizar áreas (Polígonos sob a curva)
             function fillArea(startT, endT, color) {
                 ctx.beginPath();
