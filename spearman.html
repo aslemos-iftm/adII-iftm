@@ -183,14 +183,14 @@
             </div>
 
             <div class="card">
-                <strong>2. Coeficiente de Spearman (r<sub>s</sub>)</strong>
-                <div class="formula">r<sub>s</sub> = 1 - (6 * Σd²) / (8 * 63)<br>r<sub>s</sub> = <span id="valRs" class="highlight">1.000</span></div>
+                <strong>2. Coeficiente de Spearman (rs)</strong>
+                <div class="formula">rs = 1 - (6 * Σd²) / (8 * 63)<br>rs = <span id="valRs" class="highlight">1.000</span></div>
             </div>
             
             <div class="card">
                 <strong>3. Estatística do Teste (t calculado)</strong>
                 <div style="font-size: 0.85em; color: #666;">gl = n - 2 = 6</div>
-                <div class="formula">t = r<sub>s</sub> * √[ 6 / (1 - r<sub>s</sub>²) ]<br>t_calc = <span id="valT" class="highlight" style="color: purple;">∞</span></div>
+                <div class="formula">t = rs * √[ 6 / (1 - rs²) ]<br>t_calc = <span id="valT" class="highlight" style="color: purple;">∞</span></div>
             </div>
         </div>
 
@@ -220,18 +220,14 @@
         const N = 8;
         const individuals = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
         
-        // Estado: posição [0 a 7] contém qual índice de indivíduo
         let stateY = [0, 1, 2, 3, 4, 5, 6, 7]; 
 
-        // Tabela de valores críticos t de Student (bicaudal) para gl = 6
         const tCriticalValues = {
             "0.10": 1.943,
             "0.05": 2.447,
             "0.01": 3.707
         };
 
-        // Função Aproximada da PDF da curva t (gl=6) para desenhar o gráfico
-        // f(t) = C * (1 + t^2 / 6)^(-3.5)
         function tPdf(t) {
             return Math.pow(1 + (t * t) / 6, -3.5);
         }
@@ -264,7 +260,6 @@
                 box.innerText = individuals[indIndex];
                 box.draggable = true;
                 
-                // Eventos de Drag & Drop
                 box.addEventListener('dragstart', (e) => {
                     draggedIndex = i;
                     e.dataTransfer.effectAllowed = 'move';
@@ -287,7 +282,6 @@
                     e.preventDefault();
                     box.classList.remove('drag-over');
                     if (draggedIndex !== null && draggedIndex !== i) {
-                        // Faz o SWAP (Troca) das posições
                         let temp = stateY[draggedIndex];
                         stateY[draggedIndex] = stateY[i];
                         stateY[i] = temp;
@@ -304,14 +298,14 @@
             const svg = document.getElementById('svgLines');
             svg.innerHTML = '';
             for (let ind = 0; ind < N; ind++) {
-                const posY_left = (ind * 60) + 30; // Ranking X
-                const rankY = stateY.indexOf(ind); // Ranking Y
+                const posY_left = (ind * 60) + 30; 
+                const rankY = stateY.indexOf(ind); 
                 const posY_right = (rankY * 60) + 30;
                 const diff = Math.abs(ind - rankY);
                 
-                let color = '#bdc3c7'; // cinza (normal)
-                if (diff >= 4) color = '#e74c3c'; // vermelho (alta ruptura)
-                else if (diff >= 2) color = '#f1c40f'; // amarelo (média ruptura)
+                let color = '#bdc3c7'; 
+                if (diff >= 4) color = '#e74c3c'; 
+                else if (diff >= 2) color = '#f1c40f'; 
 
                 svg.innerHTML += `<line x1="0" y1="${posY_left}" x2="150" y2="${posY_right}" stroke="${color}" />`;
             }
@@ -321,7 +315,6 @@
             renderY();
             drawLines();
             
-            // 1. Matemática de Spearman
             const tbody = document.getElementById('dataTable');
             tbody.innerHTML = '';
             let sumD2 = 0;
@@ -337,21 +330,18 @@
 
             document.getElementById('valD2').innerText = sumD2;
 
-            // 2. Coeficiente
             const rs = 1 - ((6 * sumD2) / (N * (N * N - 1)));
             document.getElementById('valRs').innerText = rs.toFixed(3);
 
-            // 3. Teste t
             let tCalc = 0;
             if (Math.abs(rs) === 1) {
-                tCalc = rs > 0 ? 999 : -999; // Representação do infinito
+                tCalc = rs > 0 ? 999 : -999; 
                 document.getElementById('valT').innerText = rs > 0 ? '+∞' : '-∞';
             } else {
                 tCalc = rs * Math.sqrt(6 / (1 - rs * rs));
                 document.getElementById('valT').innerText = tCalc.toFixed(3);
             }
 
-            // 4. Interface Crítica e Gráfico
             const alphaStr = document.getElementById('alphaSelect').value;
             const tCrit = tCriticalValues[alphaStr];
             document.getElementById('tCritDisplay').innerText = tCrit;
@@ -368,12 +358,10 @@
             
             ctx.clearRect(0, 0, w, h);
 
-            // Escala Matemática do Eixo X (-5 a +5)
             const xMin = -5, xMax = 5;
             const mapX = (val) => ((val - xMin) / (xMax - xMin)) * w;
             const mapY = (val) => h - 25 - (val * (h - 40)); 
 
-            // Desenhar Eixo Central (Zero) e Linha Base
             ctx.beginPath(); ctx.moveTo(0, h-25); ctx.lineTo(w, h-25); ctx.strokeStyle = '#333'; ctx.stroke();
             ctx.beginPath(); ctx.moveTo(mapX(0), h-25); ctx.lineTo(mapX(0), 10); ctx.strokeStyle = '#ecf0f1'; ctx.stroke();
 
@@ -389,11 +377,9 @@
                 ctx.fill();
             }
 
-            // 1. Zonas de Rejeição Crítica
             fillArea(xMin, -tCrit, 'rgba(231, 76, 60, 0.2)');
             fillArea(tCrit, xMax, 'rgba(231, 76, 60, 0.2)');
 
-            // 2. Área do P-Valor (Ocultada se for infinito)
             const isInfinity = Math.abs(tCalc) === 999;
             let pColor = 'rgba(142, 68, 173, 0.6)';
             
@@ -403,7 +389,6 @@
                 else fillArea(xMin, clampedT, pColor);
             }
 
-            // 3. Desenhar a linha principal da Curva
             ctx.beginPath();
             for(let t = xMin; t <= xMax; t += 0.05) {
                 let ptX = mapX(t);
@@ -415,7 +400,6 @@
             ctx.strokeStyle = '#2c3e50';
             ctx.stroke();
 
-            // 4. Marcadores Verticais e Textos
             function drawMarker(val, label, color, yOffset) {
                 let px = mapX(val);
                 if(px < 10) px = 10; if(px > w-10) px = w-10; 
@@ -435,7 +419,6 @@
             drawMarker(-tCrit, '-t_crit', '#c0392b', 0);
             drawMarker(tCrit, 't_crit', '#c0392b', 0);
 
-            // 5. Exibição Didática da Singularidade (Infinito)
             if (isInfinity) {
                 ctx.fillStyle = 'purple';
                 ctx.font = 'bold 16px sans-serif';
@@ -447,71 +430,17 @@
                 drawMarker(clampedT, 't_calc', 'purple', 15);
             }
         }
-            // Renderizar áreas (Polígonos sob a curva)
-            function fillArea(startT, endT, color) {
-                ctx.beginPath();
-                ctx.moveTo(mapX(startT), h-25);
-                for(let t = startT; t <= endT; t += 0.05) {
-                    ctx.lineTo(mapX(t), mapY(tPdf(t)));
-                }
-                ctx.lineTo(mapX(endT), mapY(tPdf(endT)));
-                ctx.lineTo(mapX(endT), h-25);
-                ctx.fillStyle = color;
-                ctx.fill();
-            }
-
-            // 1. Zonas de Rejeição Crítica (Alfa/2) - Vermelho Claro
-            fillArea(xMin, -tCrit, 'rgba(231, 76, 60, 0.2)');
-            fillArea(tCrit, xMax, 'rgba(231, 76, 60, 0.2)');
-
-            // 2. Área do P-Valor (Sombra escura a partir do tCalc até a cauda)
-            let pColor = 'rgba(142, 68, 173, 0.6)'; // Roxo translúcido
-            let clampedT = Math.max(Math.min(tCalc, xMax), xMin); // Prender no limite visual
-            
-            if (Math.abs(clampedT) > 0) {
-                if (clampedT > 0) fillArea(clampedT, xMax, pColor);
-                else fillArea(xMin, clampedT, pColor);
-            }
-
-            // 3. Desenhar a linha principal da Curva
-            ctx.beginPath();
-            for(let t = xMin; t <= xMax; t += 0.05) {
-                let ptX = mapX(t);
-                let ptY = mapY(tPdf(t));
-                if (t === xMin) ctx.moveTo(ptX, ptY);
-                else ctx.lineTo(ptX, ptY);
-            }
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#2c3e50';
-            ctx.stroke();
-
-            // 4. Marcadores Verticais e Textos
-            function drawMarker(val, label, color, yOffset) {
-                let px = mapX(val);
-                if(px < 10) px = 10; if(px > w-10) px = w-10; // keep in bounds
-                
-                ctx.beginPath();
-                ctx.setLineDash([5, 3]);
-                ctx.moveTo(px, h-25); ctx.lineTo(px, 15 + yOffset);
-                ctx.strokeStyle = color; ctx.stroke();
-                ctx.setLineDash([]);
-                
-                ctx.fillStyle = color;
-                ctx.font = 'bold 12px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(label, px, 10 + yOffset);
-            }
-
-            drawMarker(-tCrit, '-t_crit', '#c0392b', 0);
-            drawMarker(tCrit, 't_crit', '#c0392b', 0);
-            drawMarker(clampedT, 't_calc', 'purple', 15);
-        }
 
         function updateVerdict(tCalc, tCrit) {
             const box = document.getElementById('verdictBox');
-            if (Math.abs(tCalc) >= tCrit) {
+            const isInfinity = Math.abs(tCalc) === 999;
+
+            if (isInfinity) {
                 box.className = "verdict reject";
-                box.innerHTML = `H₀ Rejeitada! O t calculado (${Math.abs(tCalc) === 999 ? '∞' : tCalc.toFixed(2)}) caiu dentro da zona crítica sombreada.<br><small>O p-valor (área roxa) é menor que o Alfa escolhido.</small>`;
+                box.innerHTML = `H₀ Rejeitada! O t calculado (${tCalc > 0 ? '+∞' : '-∞'}) rompeu o limite geométrico.<br><small>Correlação perfeita comprovada. O ruído sumiu e o p-valor atingiu o zero absoluto.</small>`;
+            } else if (Math.abs(tCalc) >= tCrit) {
+                box.className = "verdict reject";
+                box.innerHTML = `H₀ Rejeitada! O t calculado (${tCalc.toFixed(2)}) caiu dentro da zona crítica sombreada.<br><small>O p-valor (área roxa) é menor que o Alfa escolhido.</small>`;
             } else {
                 box.className = "verdict accept";
                 box.innerHTML = `H₀ Aceita! O t calculado (${tCalc.toFixed(2)}) ficou no centro geométrico (zona branca).<br><small>A desordem é muito grande para afirmarmos que existe correlação.</small>`;
