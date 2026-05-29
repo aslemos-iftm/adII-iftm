@@ -424,7 +424,7 @@
                 ctx.font = 'bold 16px sans-serif';
                 ctx.textAlign = 'left';
                 let infText = tCalc > 0 ? "t → +∞" : "t → -∞";
-                ctx.fillText(infText, w / 2, 25);
+                ctx.fillText(infText, w / 2 + 50, 25);
             } else {
                 let clampedT = Math.max(Math.min(tCalc, xMax), xMin);
                 drawMarker(clampedT, 't_calc', 'purple', 15);
