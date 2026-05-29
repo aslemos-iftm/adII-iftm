@@ -422,8 +422,8 @@
             if (isInfinity) {
                 ctx.fillStyle = 'purple';
                 ctx.font = 'bold 16px sans-serif';
-                ctx.textAlign = 'center';
-                let infText = tCalc > 0 ? "t → +∞ (Divisão por zero)" : "t → -∞ (Divisão por zero)";
+                ctx.textAlign = 'right';
+                let infText = tCalc > 0 ? "t → +∞" : "t → -∞";
                 ctx.fillText(infText, w / 2, 25);
             } else {
                 let clampedT = Math.max(Math.min(tCalc, xMax), xMin);
