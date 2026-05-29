@@ -135,7 +135,7 @@
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Linha Crítica (Qui-Quadrado gl=2, alpha=0,05 -> 5,99) */
+        /* Linha Crítica (Qui-Quadrado gl=2, alpha=0.05 -> 5.99) */
         /* Máximo teórico H para N=15 é 12.5. Então 5.99 é ~47.92% da barra */
         .critical-line {
             position: absolute;
@@ -196,7 +196,7 @@
                     <h3>Serraria X</h3>
                     <div class="group-stats">
                         n: <span id="nA">5</span> | Soma (R): <span id="sumA">40</span><br>
-                        Média (<span style="text-decoration:overline">R</span>): <span id="meanA">8,00</span>
+                        Média (<span style="text-decoration:overline">R</span>): <span id="meanA">8.00</span>
                     </div>
                 </div>
                 <div class="items-area" id="areaA"></div>
@@ -207,7 +207,7 @@
                     <h3>Serraria Y</h3>
                     <div class="group-stats">
                         n: <span id="nB">5</span> | Soma (R): <span id="sumB">40</span><br>
-                        Média (<span style="text-decoration:overline">R</span>): <span id="meanB">8,00</span>
+                        Média (<span style="text-decoration:overline">R</span>): <span id="meanB">8.00</span>
                     </div>
                 </div>
                 <div class="items-area" id="areaB"></div>
@@ -218,7 +218,7 @@
                     <h3>Serraria Z</h3>
                     <div class="group-stats">
                         n: <span id="nC">5</span> | Soma (R): <span id="sumC">40</span><br>
-                        Média (<span style="text-decoration:overline">R</span>): <span id="meanC">8,00</span>
+                        Média (<span style="text-decoration:overline">R</span>): <span id="meanC">8.00</span>
                     </div>
                 </div>
                 <div class="items-area" id="areaC"></div>
@@ -227,15 +227,15 @@
 
         <div class="results-panel">
             <div class="formula-display">
-                H = <span id="calcString">0,05 * ( 320,0 + 320,0 + 320,0 ) - 48</span> = <b style="color:var(--accent); font-size:1.3em;" id="hValue">0,00</b>
+                H = <span id="calcString">0.05 * ( 320.0 + 320.0 + 320.0 ) - 48</span> = <b style="color:var(--accent); font-size:1.3em;" id="hValue">0.00</b>
             </div>
 
             <div class="chart-container">
                 <div class="scale-labels">
                     <span>0 (Homogêneo)</span>
-                    <span>12,5 (Separação Máxima)</span>
+                    <span>12.5 (Separação Máxima)</span>
                 </div>
-                <div class="critical-label">Limiar (5,99)</div>
+                <div class="critical-label">Limiar (5.99)</div>
                 <div class="gauge-bar">
                     <div class="critical-line"></div>
                     <div class="marker" id="marker" style="left: 0%;"></div>
@@ -259,7 +259,7 @@
 
         const N = 15;
         const H_MAX = 12.5; // Limite superior teórico matemático
-        const CRITICAL_VAL = 5.99; // Qui-Quadrado para gl=2, alpha=0,05
+        const CRITICAL_VAL = 5.99; // Qui-Quadrado para gl=2, alpha=0.05
 
         window.onload = () => {
             for (let areaId in initialState) {
@@ -297,11 +297,7 @@
             }
         }
 
-        // Motor Matemático com formatação PT-BR
-        function formatNumber(num, decimals) {
-            return num.toFixed(decimals).replace('.', ',');
-        }
-
+        // Motor Matemático (Padrão Internacional com Ponto)
         function calculateH() {
             const groups = ['A', 'B', 'C'];
             let sumFraction = 0;
@@ -314,8 +310,8 @@
                 let n = postos.length;
                 let sum = postos.reduce((a, b) => a + b, 0);
                 
-                // Formatação local com vírgula
-                let mean = n > 0 ? formatNumber(sum / n, 2) : "0,00";
+                // Formatação com ponto
+                let mean = n > 0 ? (sum / n).toFixed(2) : "0.00";
 
                 document.getElementById('n' + g).innerText = n;
                 document.getElementById('sum' + g).innerText = sum;
@@ -324,20 +320,20 @@
                 if (n > 0) {
                     let frac = (Math.pow(sum, 2) / n);
                     sumFraction += frac;
-                    fractionsText.push(formatNumber(frac, 1));
+                    fractionsText.push(frac.toFixed(1));
                 } else {
-                    fractionsText.push("0,0");
+                    fractionsText.push("0.0");
                 }
             });
 
-            // Cálculo Matemático (interno com ponto)
+            // Cálculo Matemático
             let H = (0.05 * sumFraction) - 48;
             if (H < 0) H = 0; 
             if (H > H_MAX) H = H_MAX; // Trava de segurança para limites teóricos
 
-            // Saída Visual (com vírgula)
-            document.getElementById('calcString').innerText = `0,05 * ( ${fractionsText.join(' + ')} ) - 48`;
-            document.getElementById('hValue').innerText = formatNumber(H, 2);
+            // Saída Visual (com ponto)
+            document.getElementById('calcString').innerText = `0.05 * ( ${fractionsText.join(' + ')} ) - 48`;
+            document.getElementById('hValue').innerText = H.toFixed(2);
 
             let percent = (H / H_MAX) * 100;
             if (percent > 100) percent = 100;
@@ -345,7 +341,7 @@
 
             let statusEl = document.getElementById('statusMsg');
             if (H >= CRITICAL_VAL) {
-                statusEl.innerText = "H₀ Rejeitada (p < 0,05): Há diferença significativa! A variância entre grupos dominou o erro.";
+                statusEl.innerText = "H₀ Rejeitada (p < 0.05): Há diferença significativa! A variância entre grupos dominou o erro.";
                 statusEl.className = "status-text status-reject";
             } else {
                 statusEl.innerText = "H₀ Aceita: Não há evidência estatística de diferença. Os postos parecem misturados ao acaso.";
