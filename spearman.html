@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Visualizador: Correlação de Spearman</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h2 { color: #2c3e50; margin-top: 0; }
+        .dashboard {
+            display: flex;
+            gap: 30px;
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 1100px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        /* Painel Gráfico */
+        .graphic-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 350px;
+        }
+        .headers {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        .ranking-container {
+            display: flex;
+            position: relative;
+            height: 480px; /* 8 rows * 60px */
+            width: 100%;
+            background: #fdfdfd;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+        .col-x, .col-y {
+            display: flex;
+            flex-direction: column;
+            width: 50px;
+            z-index: 2;
+        }
+        .col-x { margin-right: auto; }
+        .col-y { margin-left: auto; }
+        
+        .node {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+        .box {
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            color: white;
+            font-weight: bold;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .box-y { background: #e67e22; }
+        
+        .controls {
+            position: absolute;
+            right: -25px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .controls button {
+            background: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            padding: 2px 5px;
+        }
+        .controls button:hover { background: #d5dbdb; }
+        .controls button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .svg-lines {
+            position: absolute;
+            top: 0;
+            left: 50px;
+            width: 250px;
+            height: 480px;
+            z-index: 1;
+            pointer-events: none;
+        }
+        line {
+            stroke: #bdc3c7;
+            stroke-width: 2;
+            transition: stroke 0.3s;
+        }
+
+        /* Painel Matemático */
+        .math-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        th, td { border: 1px solid #ddd; padding: 6px; }
+        th { background-color: #ecf0f1; color: #2c3e50; }
+        
+        .card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .formula { font-family: 'Courier New', Courier, monospace; font-size: 1.1em; }
+        .highlight { font-weight: bold; color: #e74c3c; font-size: 1.2em; }
+        .highlight-rs { font-weight: bold; color: #2980b9; font-size: 1.2em; }
+
+        /* Termômetro de Caos */
+        .thermometer-container {
+            width: 100%;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .thermometer-fill {
+            height: 100%;
+            background: linear-gradient(to right, #2ecc71, #f1c40f, #e74c3c);
+            width: 0%;
+            transition: width 0.3s ease-out;
+        }
+        .thermometer-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>A Mecânica de Spearman (n = 8)</h2>
+    
+    <div class="dashboard">
+        <div class="graphic-panel">
+            <div class="headers">
+                <span>Posto X (Fixo)</span>
+                <span>Posto Y (Móvel)</span>
+            </div>
+            <div class="ranking-container">
+                <div class="col-x" id="colX"></div>
+                <svg class="svg-lines" id="svgLines"></svg>
+                <div class="col-y" id="colY"></div>
+            </div>
+            <p style="font-size: 0.8em; color: #7f8c8d; text-align: center; margin-top: 15px;">
+                *Cada linha representa 1 indivíduo. A inclinação da linha é o descolamento geométrico (d).
+            </p>
+        </div>
+
+        <div class="math-panel">
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Indivíduo</th>
+                            <th>X</th>
+                            <th>Y</th>
+                            <th>d = (X - Y)</th>
+                            <th>d²</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTable"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <strong>1. A Penalidade Geométrica (Caos Gerado)</strong><br>
+                <span>Soma de d² = </span> <span class="highlight" id="sumD2">0</span>
+                
+                <div class="thermometer-container">
+                    <div class="thermometer-fill" id="chaosBar"></div>
+                </div>
+                <div class="thermometer-labels">
+                    <span>Ordem (0)</span>
+                    <span>Acaso (84)</span>
+                    <span>Inversão Total (168)</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <strong>2. O Coeficiente (Ancoragem e Desconto)</strong><br>
+                <div class="formula">
+                    r_s = 1 - [ 6 * <span id="f_d2">0</span> ] / [ 8 * (64 - 1) ]<br>
+                    r_s = <span class="highlight-rs" id="valRs">1.000</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <strong>3. Teste t de Significância (Sinal vs Ruído)</strong><br>
+                <div class="formula">
+                    t = <span id="f_rs">1.000</span> * √[ 6 / (1 - <span id="f_rs2">1.000</span>) ]<br>
+                    t = <span class="highlight" id="valT" style="color: #8e44ad;">∞</span>
+                </div>
+                <div style="font-size: 0.85em; color: #666; margin-top: 8px;" id="tConclusion">
+                    Relação perfeita detectada. Não há ruído.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const N = 8;
+        const MAX_CHAOS = (Math.pow(N, 3) - N) / 3; // 168 para n=8
+        
+        // Indivíduos representados por letras para facilitar visualização
+        const individuals = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        
+        // Estado inicial: Y = X (Correlação Perfeita)
+        // stateY armazena qual indivíduo (0 a 7) está em qual posição (0 a 7) do ranking Y
+        let stateY = [0, 1, 2, 3, 4, 5, 6, 7];
+
+        function init() {
+            renderX();
+            updateAll();
+        }
+
+        function renderX() {
+            const colX = document.getElementById('colX');
+            colX.innerHTML = '';
+            for (let i = 0; i < N; i++) {
+                colX.innerHTML += `
+                    <div class="node">
+                        <div class="box">${individuals[i]}<br><small style="font-size:10px">${i+1}</small></div>
+                    </div>`;
+            }
+        }
+
+        function renderY() {
+            const colY = document.getElementById('colY');
+            colY.innerHTML = '';
+            for (let i = 0; i < N; i++) {
+                const indIndex = stateY[i];
+                colY.innerHTML += `
+                    <div class="node">
+                        <div class="box box-y">${individuals[indIndex]}<br><small style="font-size:10px">${i+1}</small>
+                            <div class="controls">
+                                <button onclick="moveUp(${i})" ${i === 0 ? 'disabled' : ''}>▲</button>
+                                <button onclick="moveDown(${i})" ${i === N-1 ? 'disabled' : ''}>▼</button>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        function moveUp(index) {
+            if (index > 0) {
+                [stateY[index], stateY[index - 1]] = [stateY[index - 1], stateY[index]];
+                updateAll();
+            }
+        }
+
+        function moveDown(index) {
+            if (index < N - 1) {
+                [stateY[index], stateY[index + 1]] = [stateY[index + 1], stateY[index]];
+                updateAll();
+            }
+        }
+
+        function updateAll() {
+            renderY();
+            drawLines();
+            calculateMath();
+        }
+
+        function drawLines() {
+            const svg = document.getElementById('svgLines');
+            svg.innerHTML = '';
+            
+            // Altura do container é 480px. 8 nós. Cada nó tem 60px.
+            // O centro vertical do nó i é (i * 60) + 30
+            for (let ind = 0; ind < N; ind++) {
+                const posY_left = (ind * 60) + 30; // Posição no ranking X (Fixo)
+                
+                const rankY = stateY.indexOf(ind); // Posição do indivíduo no ranking Y
+                const posY_right = (rankY * 60) + 30;
+
+                const diff = Math.abs(ind - rankY);
+                // Cor da linha baseada no grau de deslocamento (vermelho para grandes rupturas)
+                let color = '#bdc3c7';
+                if (diff >= 4) color = '#e74c3c';
+                else if (diff >= 2) color = '#f1c40f';
+
+                svg.innerHTML += `<line x1="0" y1="${posY_left}" x2="250" y2="${posY_right}" stroke="${color}" />`;
+            }
+        }
+
+        function calculateMath() {
+            const tbody = document.getElementById('dataTable');
+            tbody.innerHTML = '';
+            
+            let sumD2 = 0;
+
+            for (let ind = 0; ind < N; ind++) {
+                const xVal = ind + 1;
+                const yVal = stateY.indexOf(ind) + 1;
+                const d = xVal - yVal;
+                const d2 = d * d;
+                sumD2 += d2;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${individuals[ind]}</strong></td>
+                        <td>${xVal}</td>
+                        <td>${yVal}</td>
+                        <td>${d > 0 ? '+'+d : d}</td>
+                        <td>${d2}</td>
+                    </tr>`;
+            }
+
+            // Atualiza Interface Matemática
+            document.getElementById('sumD2').innerText = sumD2;
+            document.getElementById('f_d2').innerText = sumD2;
+            
+            // Termômetro
+            const chaosPercent = (sumD2 / MAX_CHAOS) * 100;
+            document.getElementById('chaosBar').style.width = chaosPercent + '%';
+
+            // Coeficiente (rs)
+            const rs = 1 - ((6 * sumD2) / (N * (N * N - 1)));
+            const rsStr = rs.toFixed(3);
+            document.getElementById('valRs').innerText = rsStr;
+            document.getElementById('f_rs').innerText = rsStr;
+            
+            // Teste t
+            const rs2 = rs * rs;
+            document.getElementById('f_rs2').innerText = rs2.toFixed(3);
+            
+            const tConclusion = document.getElementById('tConclusion');
+            if (Math.abs(rs) === 1) {
+                document.getElementById('valT').innerText = rs > 0 ? '∞' : '-∞';
+                tConclusion.innerText = "Correlação perfeita detectada. Não há ruído remanescente para o denominador do teste t.";
+            } else {
+                // gl = 8 - 2 = 6
+                const t = rs * Math.sqrt(6 / (1 - rs2));
+                document.getElementById('valT').innerText = t.toFixed(3);
+                
+                // Análise simples de significância para gl=6, alfa=0.05 bicaudal (crítico aprox 2.447)
+                if (Math.abs(t) >= 2.447) {
+                    tConclusion.innerHTML = "<span style='color:#2ecc71'>Significativo (Rejeita H₀): O sinal superou o ruído de fundo.</span>";
+                } else {
+                    tConclusion.innerHTML = "<span style='color:#e74c3c'>Não Significativo (Aceita H₀): A bagunça geométrica não permite afirmar padrão.</span>";
+                }
+            }
+        }
+
+        // Iniciar
+        init();
+    </script>
+</body>
+</html>
