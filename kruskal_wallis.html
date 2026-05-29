@@ -129,7 +129,14 @@
         .gauge-bar {
             width: 100%;
             height: 30px;
-            background: linear-gradient(to right, #2ecc71 0%, #f1c40f 47%, #e74c3c 48%, #c0392b 100%);
+            /* Gradiente fluido ancorado matematicamente na linha crítica de 47.92% */
+            background: linear-gradient(to right, 
+                #2ecc71 0%, 
+                #f1c40f 40%, 
+                #e67e22 47.92%, 
+                #e74c3c 55%, 
+                #c0392b 100%
+            );
             border-radius: 15px;
             position: relative;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
@@ -250,7 +257,6 @@
     </div>
 
     <script>
-        // Configuração Inicial Perfeitamente Balanceada
         const initialState = {
             areaA: [1, 6, 8, 10, 15],
             areaB: [2, 5, 9, 11, 13],
@@ -258,8 +264,8 @@
         };
 
         const N = 15;
-        const H_MAX = 12.5; // Limite superior teórico matemático
-        const CRITICAL_VAL = 5.99; // Qui-Quadrado para gl=2, alpha=0.05
+        const H_MAX = 12.5; 
+        const CRITICAL_VAL = 5.99; 
 
         window.onload = () => {
             for (let areaId in initialState) {
@@ -297,7 +303,6 @@
             }
         }
 
-        // Motor Matemático (Padrão Internacional com Ponto)
         function calculateH() {
             const groups = ['A', 'B', 'C'];
             let sumFraction = 0;
@@ -310,7 +315,6 @@
                 let n = postos.length;
                 let sum = postos.reduce((a, b) => a + b, 0);
                 
-                // Formatação com ponto
                 let mean = n > 0 ? (sum / n).toFixed(2) : "0.00";
 
                 document.getElementById('n' + g).innerText = n;
@@ -326,12 +330,10 @@
                 }
             });
 
-            // Cálculo Matemático
             let H = (0.05 * sumFraction) - 48;
             if (H < 0) H = 0; 
-            if (H > H_MAX) H = H_MAX; // Trava de segurança para limites teóricos
+            if (H > H_MAX) H = H_MAX; 
 
-            // Saída Visual (com ponto)
             document.getElementById('calcString').innerText = `0.05 * ( ${fractionsText.join(' + ')} ) - 48`;
             document.getElementById('hValue').innerText = H.toFixed(2);
 
