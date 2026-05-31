@@ -424,7 +424,7 @@
                 ctx.font = 'bold 16px sans-serif';
                 ctx.textAlign = 'left';
                 let infText = tCalc > 0 ? "t → +∞" : "t → -∞";
-                let offset = tCalc > 0 ? 60 : -97;
+                let offset = tCalc > 0 ? 60 : -100;
                 ctx.fillText(infText, w / 2 + offset, 25);
             } else {
                 let clampedT = Math.max(Math.min(tCalc, xMax), xMin);
