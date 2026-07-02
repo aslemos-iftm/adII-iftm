@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estudo Dirigido: R para Análise de Dados — IFTM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:       #1a1a2e;
+    --ink-soft:  #3d3d5c;
+    --paper:     #f5f2eb;
+    --paper-alt: #ede9df;
+    --accent:    #2c7a4b;
+    --accent-d:  #1f5836;
+    --accent2:   #c0392b;
+    --accent3:   #2563a8;
+    --code-bg:   #1e2d3d;
+    --code-fg:   #d8e8d8;
+    --rule:      rgba(26,26,46,0.12);
+    --mono:      'DM Mono', 'Courier New', monospace;
+    --serif:     'DM Serif Display', Georgia, serif;
+    --sans:      'DM Sans', -apple-system, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-weight: 300;
+    line-height: 1.7;
+    padding-bottom: 80px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding: 22px clamp(20px, 5vw, 60px);
+    display: flex; align-items: center; gap: 16px;
+    background: var(--paper);
+    position: sticky; top: 0; z-index: 50;
+    flex-wrap: wrap;
+  }
+  .badge {
+    width: 44px; height: 44px; background: var(--ink); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .badge span { font-family: var(--mono); font-size: 9px; font-weight: 500; color: var(--paper); text-align: center; line-height: 1.2; }
+  .header-text h1 { font-family: var(--serif); font-size: clamp(1.05rem, 2.4vw, 1.4rem); font-weight: 400; line-height: 1.15; }
+  .header-text p { font-size: 0.72rem; color: var(--ink-soft); font-family: var(--mono); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 2px; }
+  .webr-status {
+    margin-left: auto; font-family: var(--mono); font-size: 0.72rem;
+    padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 7px;
+    background: var(--paper-alt); color: var(--ink-soft); transition: 0.3s;
+  }
+  .webr-status .dot { width: 9px; height: 9px; border-radius: 50%; background: #e0b020; animation: pulse 1.5s infinite; }
+  .webr-status.ready { background: rgba(44,122,75,0.12); color: var(--accent-d); }
+  .webr-status.ready .dot { background: var(--accent); animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+  /* ── INTRO ── */
+  .intro { padding: clamp(32px, 5vw, 56px) clamp(20px, 5vw, 60px); border-bottom: 1px solid var(--rule); max-width: 900px; }
+  .intro .label { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .intro .label::before { content: ''; width: 28px; height: 1px; background: var(--accent); }
+  .intro h2 { font-family: var(--serif); font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1.12; font-weight: 400; margin-bottom: 20px; }
+  .intro h2 em { font-style: italic; color: var(--ink-soft); }
+  .intro p { font-size: 1.02rem; color: var(--ink-soft); max-width: 680px; }
+  .intro .how { margin-top: 24px; padding: 16px 20px; background: var(--paper-alt); border-left: 3px solid var(--accent); border-radius: 4px; font-size: 0.92rem; }
+  .intro .how strong { color: var(--ink); }
+
+  /* ── PROGRESS NAV ── */
+  .toc { padding: 20px clamp(20px, 5vw, 60px); border-bottom: 1px solid var(--rule); display: flex; gap: 8px; flex-wrap: wrap; background: var(--paper); }
+  .toc a { font-family: var(--mono); font-size: 0.74rem; padding: 6px 13px; border: 1px solid var(--rule); border-radius: 20px; text-decoration: none; color: var(--ink-soft); transition: 0.2s; }
+  .toc a:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  /* ── MODULE ── */
+  .module { padding: clamp(32px, 5vw, 52px) clamp(20px, 5vw, 60px); border-bottom: 1px solid var(--rule); max-width: 1000px; }
+  .module-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+  .module-num { font-family: var(--mono); font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; flex-shrink: 0; }
+  .module-title { font-family: var(--serif); font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 400; line-height: 1.2; }
+  .module-sub { font-size: 0.95rem; color: var(--ink-soft); margin-bottom: 28px; max-width: 680px; }
+
+  /* ── CONCEPT BLOCK ── */
+  .concept { margin: 24px 0; }
+  .concept h4 { font-family: var(--sans); font-weight: 500; font-size: 1.05rem; margin-bottom: 8px; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+  .concept h4::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
+  .concept p { font-size: 0.95rem; color: var(--ink-soft); margin-bottom: 10px; }
+  .concept .excel-note { font-size: 0.86rem; color: var(--accent3); background: rgba(37,99,168,0.07); padding: 8px 12px; border-radius: 4px; display: inline-block; }
+  .concept .excel-note strong { color: var(--accent3); }
+
+  /* ── R CELL ── */
+  .rcell { margin: 18px 0; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--code-bg); }
+  .rcell-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .rcell-bar .lbl { font-family: var(--mono); font-size: 0.7rem; color: #8aa; letter-spacing: 0.05em; }
+  .rcell-run { font-family: var(--mono); font-size: 0.74rem; background: var(--accent); color: white; border: none; padding: 5px 16px; border-radius: 5px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
+  .rcell-run:hover { background: var(--accent-d); }
+  .rcell-run:disabled { background: #556; cursor: not-allowed; opacity: 0.6; }
+  .rcell-run .play { font-size: 0.8rem; }
+  .rcell textarea { width: 100%; background: transparent; color: var(--code-fg); font-family: var(--mono); font-size: 0.86rem; line-height: 1.55; border: none; padding: 14px; resize: vertical; outline: none; min-height: 60px; tab-size: 2; }
+  .rcell-out { background: #14202c; border-top: 1px solid rgba(255,255,255,0.08); padding: 0; max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+  .rcell-out.show { max-height: 1200px; padding: 12px 14px; }
+  .rcell-out pre { font-family: var(--mono); font-size: 0.82rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; margin: 0; color: #c8d8e8; }
+  .rcell-out .plot-img { max-width: 100%; background: white; border-radius: 4px; margin-top: 8px; display: block; }
+  .rcell-out .err { color: #ff8a7a; }
+
+  /* ── EXERCISE ── */
+  .exercise { margin: 22px 0; padding: 18px 20px; background: var(--paper-alt); border-radius: 8px; border-left: 4px solid var(--accent2); }
+  .exercise .etag { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent2); font-weight: 500; }
+  .exercise h4 { font-family: var(--sans); font-weight: 500; margin: 6px 0 8px; }
+  .exercise p { font-size: 0.92rem; color: var(--ink-soft); }
+  .exercise details { margin-top: 12px; }
+  .exercise summary { font-family: var(--mono); font-size: 0.78rem; color: var(--accent2); cursor: pointer; user-select: none; }
+  .exercise summary:hover { text-decoration: underline; }
+
+  /* ── FOOTER ── */
+  footer { padding: 32px clamp(20px, 5vw, 60px); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  footer p { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-soft); }
+  footer a { color: var(--ink); }
+
+  code.inl { font-family: var(--mono); font-size: 0.88em; background: var(--paper-alt); padding: 1px 6px; border-radius: 3px; color: var(--accent-d); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge"><span>IF<br>TM</span></div>
+  <div class="header-text">
+    <h1>Estudo Dirigido: R para Análise de Dados</h1>
+    <p>Análise de Dados II · Tecnologia em Logística</p>
+  </div>
+  <div class="webr-status" id="status">
+    <span class="dot"></span><span id="status-txt">Carregando R…</span>
+  </div>
+</header>
+
+<div class="intro">
+  <div class="label">Laboratório interativo</div>
+  <h2>Estatística <em>na prática</em>, com R rodando no seu navegador</h2>
+  <p>
+    Este material reproduz, na linguagem R, as mesmas análises que vocês já fazem com o
+    pacote de Análise de Dados do Excel — agora vendo cada passo do cálculo explicitamente.
+    O R roda diretamente no navegador, sem instalar nada.
+  </p>
+  <div class="how">
+    <strong>Como usar:</strong> cada bloco de código tem um botão <strong>Executar</strong>.
+    Clique para rodar e ver o resultado logo abaixo. Você pode editar o código antes de
+    executar — experimente trocar números e rodar de novo. A primeira execução leva alguns
+    segundos enquanto o R termina de carregar.
+  </div>
+</div>
+
+<nav class="toc">
+  <a href="#m0">0 · Primeiros passos</a>
+  <a href="#m1">1 · Estatística descritiva</a>
+  <a href="#m2">2 · Histograma e gráficos</a>
+  <a href="#m3">3 · Teste t</a>
+  <a href="#m4">4 · ANOVA</a>
+  <a href="#m5">5 · Correlação</a>
+  <a href="#m6">6 · Regressão linear</a>
+</nav>
+
+<!-- ════════════════════════ MÓDULO 0 ════════════════════════ -->
+<section class="module" id="m0">
+  <div class="module-head"><span class="module-num">MÓDULO 0</span><h3 class="module-title">Primeiros passos</h3></div>
+  <p class="module-sub">A lógica básica do R: criar variáveis, vetores e fazer contas. Em R, um conjunto de dados é antes de tudo um <em>vetor</em> — uma sequência de números.</p>
+
+  <div class="concept">
+    <h4>Atribuição e operações</h4>
+    <p>O operador <code class="inl">&lt;-</code> atribui um valor a um nome. A função <code class="inl">c()</code> ("combine") junta valores em um vetor.</p>
+  </div>
+
+  <div class="rcell" data-code="# Uma conta simples
+2 + 2 * 5
+
+# Atribuir um valor a uma variável
+x <- 10
+x * 3
+
+# Criar um vetor de dados
+tempos <- c(12, 15, 18, 22, 25, 30)
+tempos"></div>
+
+  <div class="exercise">
+    <span class="etag">Exercício 0.1</span>
+    <h4>Crie seu próprio vetor</h4>
+    <p>Crie um vetor chamado <code class="inl">produtividade</code> com os valores 45, 52, 48, 60, 55 e peça ao R para mostrá-lo. Depois calcule a soma com <code class="inl">sum()</code>.</p>
+    <details><summary>ver solução</summary>
+      <div class="rcell" data-code="produtividade <- c(45, 52, 48, 60, 55)
+produtividade
+sum(produtividade)"></div>
+    </details>
+  </div>
+</section>
+
+<!-- ════════════════════════ MÓDULO 1 ════════════════════════ -->
+<section class="module" id="m1">
+  <div class="module-head"><span class="module-num">MÓDULO 1</span><h3 class="module-title">Estatística descritiva</h3></div>
+  <p class="module-sub">As medidas-resumo de um conjunto de dados: média, mediana, desvio padrão, variância, mínimo, máximo. Equivale à opção "Estatística Descritiva" do pacote do Excel.</p>
+
+  <div class="concept">
+    <h4>Medidas individuais</h4>
+    <p>Cada medida tem uma função própria em R, com nome intuitivo em inglês.</p>
+    <span class="excel-note"><strong>No Excel:</strong> MÉDIA(), MED(), DESVPAD.A(), VAR.A()</span>
+  </div>
+
+  <div class="rcell" data-code="tempos <- c(12, 15, 18, 22, 25, 30, 14, 19, 21, 27)
+
+mean(tempos)      # média
+median(tempos)    # mediana
+sd(tempos)        # desvio padrão (amostral)
+var(tempos)       # variância (amostral)
+min(tempos)       # mínimo
+max(tempos)       # máximo
+range(tempos)     # amplitude (min e max)"></div>
+
+  <div class="concept">
+    <h4>Resumo completo de uma vez</h4>
+    <p>A função <code class="inl">summary()</code> entrega de uma vez os quartis, a média, o mínimo e o máximo — equivalente ao relatório completo do Excel.</p>
+  </div>
+
+  <div class="rcell" data-code="tempos <- c(12, 15, 18, 22, 25, 30, 14, 19, 21, 27)
+summary(tempos)
+
+# Quantidade de observações
+length(tempos)"></div>
+
+  <div class="exercise">
+    <span class="etag">Exercício 1.1</span>
+    <h4>Descreva uma amostra de produtividade</h4>
+    <p>Dada a amostra de produtividade de 8 operadores: 45, 52, 48, 60, 55, 49, 58, 51 — calcule a média, o desvio padrão e use <code class="inl">summary()</code> para o resumo completo.</p>
+    <details><summary>ver solução</summary>
+      <div class="rcell" data-code="prod <- c(45, 52, 48, 60, 55, 49, 58, 51)
+mean(prod)
+sd(prod)
+summary(prod)"></div>
+    </details>
+  </div>
+</section>
+
+<!-- ════════════════════════ MÓDULO 2 ════════════════════════ -->
+<section class="module" id="m2">
+  <div class="module-head"><span class="module-num">MÓDULO 2</span><h3 class="module-title">Histograma e gráficos</h3></div>
+  <p class="module-sub">Visualizar a distribuição dos dados. O R gera gráficos que aparecem logo abaixo do código.</p>
+
+  <div class="concept">
+    <h4>Histograma</h4>
+    <p>A função <code class="inl">hist()</code> monta o histograma automaticamente, escolhendo as faixas.</p>
+    <span class="excel-note"><strong>No Excel:</strong> Análise de Dados → Histograma</span>
+  </div>
+
+  <div class="rcell" data-code="# Simulamos 200 tempos de treinamento (distribuição normal)
+set.seed(42)
+tempos <- rnorm(200, mean = 20, sd = 5)
+
+hist(tempos,
+     main = 'Distribuicao dos tempos de treinamento',
+     xlab = 'Horas', ylab = 'Frequencia',
+     col = 'lightgreen', border = 'white')"></div>
+
+  <div class="concept">
+    <h4>Boxplot — o diagrama de caixa</h4>
+    <p>Mostra mediana, quartis e valores extremos. Excelente para comparar grupos.</p>
+  </div>
+
+  <div class="rcell" data-code="set.seed(1)
+grupo_A <- rnorm(50, mean = 50, sd = 8)
+grupo_B <- rnorm(50, mean = 56, sd = 8)
+
+boxplot(grupo_A, grupo_B,
+        names = c('Sem treino', 'Com treino'),
+        col = c('#e8c8c8', '#c8e8d0'),
+        main = 'Produtividade por grupo')"></div>
+
+  <div class="exercise">
+    <span class="etag">Exercício 2.1</span>
+    <h4>Histograma da sua amostra</h4>
+    <p>Gere 100 valores aleatórios com média 100 e desvio 15 (use <code class="inl">rnorm(100, 100, 15)</code>) e faça o histograma. Troque a cor para <code class="inl">'skyblue'</code>.</p>
+    <details><summary>ver solução</summary>
+      <div class="rcell" data-code="dados <- rnorm(100, 100, 15)
+hist(dados, col = 'skyblue', border = 'white',
+     main = 'Meu histograma', xlab = 'Valor')"></div>
+    </details>
+  </div>
+</section>
+
+<!-- ════════════════════════ MÓDULO 3 ════════════════════════ -->
+<section class="module" id="m3">
+  <div class="module-head"><span class="module-num">MÓDULO 3</span><h3 class="module-title">Teste t</h3></div>
+  <p class="module-sub">Comparar médias: uma amostra contra um valor de referência, ou duas amostras entre si. Equivale aos testes "t de Student" do pacote do Excel.</p>
+
+  <div class="concept">
+    <h4>Teste t para duas amostras independentes</h4>
+    <p>Pergunta: a diferença entre as médias dos dois grupos é estatisticamente significativa? O R devolve a estatística t, os graus de liberdade, o valor-p e o intervalo de confiança — tudo de uma vez.</p>
+    <span class="excel-note"><strong>No Excel:</strong> Teste-t: duas amostras presumindo variâncias equivalentes</span>
+  </div>
+
+  <div class="rcell" data-code="# Produtividade: grupo sem treino vs. grupo com treino
+sem_treino <- c(45, 52, 48, 50, 47, 49, 46, 51)
+com_treino <- c(58, 60, 55, 62, 59, 57, 61, 56)
+
+t.test(sem_treino, com_treino)"></div>
+
+  <div class="concept">
+    <h4>Lendo o resultado</h4>
+    <p>O <code class="inl">p-value</code> é a peça central: se for menor que 0,05, rejeitamos a hipótese de médias iguais. O R também mostra as médias de cada grupo (<code class="inl">mean of x</code>, <code class="inl">mean of y</code>) e o intervalo de confiança da diferença.</p>
+  </div>
+
+  <div class="exercise">
+    <span class="etag">Exercício 3.1</span>
+    <h4>Teste t unicaudal</h4>
+    <p>Repita o teste acima, mas testando a hipótese de que o treino <em>aumenta</em> a produtividade (unicaudal). Use o argumento <code class="inl">alternative = 'less'</code> (pois sem_treino &lt; com_treino).</p>
+    <details><summary>ver solução</summary>
+      <div class="rcell" data-code="sem_treino <- c(45, 52, 48, 50, 47, 49, 46, 51)
+com_treino <- c(58, 60, 55, 62, 59, 57, 61, 56)
+
+t.test(sem_treino, com_treino, alternative = 'less')"></div>
+    </details>
+  </div>
+</section>
+
+<!-- ════════════════════════ MÓDULO 4 ════════════════════════ -->
+<section class="module" id="m4">
+  <div class="module-head"><span class="module-num">MÓDULO 4</span><h3 class="module-title">ANOVA</h3></div>
+  <p class="module-sub">Comparar as médias de três ou mais grupos simultaneamente. Equivale a "ANOVA: fator único" do pacote do Excel.</p>
+
+  <div class="concept">
+    <h4>Preparando os dados</h4>
+    <p>A ANOVA em R precisa dos dados em formato "longo": uma coluna com os valores e outra indicando o grupo. A função <code class="inl">data.frame()</code> monta essa tabela.</p>
+  </div>
+
+  <div class="rcell" data-code="# Três turnos de operadores, produtividade medida
+manha  <- c(50, 52, 48, 51, 49)
+tarde  <- c(55, 57, 54, 56, 58)
+noite  <- c(47, 45, 49, 46, 48)
+
+# Montar tabela em formato longo
+dados <- data.frame(
+  produtividade = c(manha, tarde, noite),
+  turno = factor(rep(c('manha','tarde','noite'), each = 5))
+)
+dados"></div>
+
+  <div class="concept">
+    <h4>Rodando a ANOVA</h4>
+    <p>A função <code class="inl">aov()</code> ajusta o modelo e <code class="inl">summary()</code> mostra a tabela ANOVA com a estatística F e o valor-p.</p>
+  </div>
+
+  <div class="rcell" data-code="manha  <- c(50, 52, 48, 51, 49)
+tarde  <- c(55, 57, 54, 56, 58)
+noite  <- c(47, 45, 49, 46, 48)
+dados <- data.frame(
+  produtividade = c(manha, tarde, noite),
+  turno = factor(rep(c('manha','tarde','noite'), each = 5))
+)
+
+modelo <- aov(produtividade ~ turno, data = dados)
+summary(modelo)"></div>
+
+  <div class="exercise">
+    <span class="etag">Exercício 4.1</span>
+    <h4>Verifique a homocedasticidade</h4>
+    <p>Antes da ANOVA, é boa prática checar se as variâncias dos grupos são próximas. Calcule <code class="inl">var()</code> para os três turnos e compare a razão entre a maior e a menor (deve ficar abaixo de 4).</p>
+    <details><summary>ver solução</summary>
+      <div class="rcell" data-code="manha  <- c(50, 52, 48, 51, 49)
+tarde  <- c(55, 57, 54, 56, 58)
+noite  <- c(47, 45, 49, 46, 48)
+
+var(manha); var(tarde); var(noite)
+max(var(manha), var(tarde), var(noite)) /
+  min(var(manha), var(tarde), var(noite))"></div>
+    </details>
+  </div>
+</section>
+
+<!-- ════════════════════════ MÓDULO 5 ════════════════════════ -->
+<section class="module" id="m5">
+  <div class="module-head"><span class="module-num">MÓDULO 5</span><h3 class="module-title">Correlação</h3></div>
+  <p class="module-sub">Medir a associação entre duas variáveis. Equivale a "Correlação" do pacote do Excel.</p>
+
+  <div class="concept">
+    <h4>Coeficiente de Pearson</h4>
+    <p>A função <code class="inl">cor()</code> devolve o coeficiente r. A <code class="inl">cor.test()</code> acrescenta o valor-p e o intervalo de confiança.</p>
+    <span class="excel-note"><strong>No Excel:</strong> CORREL() ou Análise de Dados → Correlação</span>
+  </div>
+
+  <div class="rcell" data-code="# Tempo de treino prático (h) vs. produtividade
+treino <- c(2, 4, 5, 7, 8, 10, 12, 14)
+prod   <- c(48, 52, 55, 60, 63, 68, 72, 78)
+
+cor(treino, prod)        # coeficiente r
+cor(treino, prod)^2      # R-quadrado"></div>
+
+  <div class="rcell" data-code="treino <- c(2, 4, 5, 7, 8, 10, 12, 14)
+prod   <- c(48, 52, 55, 60, 63, 68, 72, 78)
+
+# Teste de significancia da correlacao
+cor.test(treino, prod)"></div>
+
+  <div class="exercise">
+    <span class="etag">Exercício 5.1</span>
+    <h4>Visualize a correlação</h4>
+    <p>Faça um gráfico de dispersão com <code class="inl">plot(treino, prod)</code> para ver a relação. Adicione títulos aos eixos.</p>
+    <details><summary>ver solução</summary>
+      <div class="rcell" data-code="treino <- c(2, 4, 5, 7, 8, 10, 12, 14)
+prod   <- c(48, 52, 55, 60, 63, 68, 72, 78)
+
+plot(treino, prod,
+     pch = 19, col = '#2c7a4b',
+     xlab = 'Horas de treino', ylab = 'Produtividade',
+     main = 'Treino vs. Produtividade')"></div>
+    </details>
+  </div>
+</section>
+
+<!-- ════════════════════════ MÓDULO 6 ════════════════════════ -->
+<section class="module" id="m6">
+  <div class="module-head"><span class="module-num">MÓDULO 6</span><h3 class="module-title">Regressão linear</h3></div>
+  <p class="module-sub">Ajustar a reta que melhor descreve a relação entre as variáveis e usá-la para previsão. Equivale a "Regressão" do pacote do Excel.</p>
+
+  <div class="concept">
+    <h4>Ajustando o modelo</h4>
+    <p>A função <code class="inl">lm()</code> ("linear model") ajusta a reta. A notação <code class="inl">y ~ x</code> lê-se "y explicado por x". O <code class="inl">summary()</code> traz os coeficientes, o R² e os testes de significância.</p>
+    <span class="excel-note"><strong>No Excel:</strong> Análise de Dados → Regressão</span>
+  </div>
+
+  <div class="rcell" data-code="treino <- c(2, 4, 5, 7, 8, 10, 12, 14)
+prod   <- c(48, 52, 55, 60, 63, 68, 72, 78)
+
+modelo <- lm(prod ~ treino)
+summary(modelo)"></div>
+
+  <div class="concept">
+    <h4>Lendo a saída</h4>
+    <p>Em <code class="inl">Coefficients</code>: a linha <code class="inl">(Intercept)</code> é o coeficiente linear b; a linha <code class="inl">treino</code> é o coeficiente angular a. O <code class="inl">Multiple R-squared</code> é o R², e o <code class="inl">Adjusted R-squared</code> é o R² ajustado que discutimos.</p>
+  </div>
+
+  <div class="concept">
+    <h4>A reta sobre os dados</h4>
+    <p>Podemos sobrepor a reta ajustada ao gráfico de dispersão com <code class="inl">abline()</code>.</p>
+  </div>
+
+  <div class="rcell" data-code="treino <- c(2, 4, 5, 7, 8, 10, 12, 14)
+prod   <- c(48, 52, 55, 60, 63, 68, 72, 78)
+modelo <- lm(prod ~ treino)
+
+plot(treino, prod, pch = 19, col = '#2563a8',
+     xlab = 'Horas de treino', ylab = 'Produtividade',
+     main = 'Reta de regressao ajustada')
+abline(modelo, col = '#c0392b', lwd = 2)"></div>
+
+  <div class="concept">
+    <h4>Fazendo previsões</h4>
+    <p>Com o modelo ajustado, prevemos a produtividade para novos valores de treino usando <code class="inl">predict()</code>.</p>
+  </div>
+
+  <div class="rcell" data-code="treino <- c(2, 4, 5, 7, 8, 10, 12, 14)
+prod   <- c(48, 52, 55, 60, 63, 68, 72, 78)
+modelo <- lm(prod ~ treino)
+
+# Prever produtividade para 6, 9 e 15 horas de treino
+novos <- data.frame(treino = c(6, 9, 15))
+predict(modelo, novos)"></div>
+
+  <div class="exercise">
+    <span class="etag">Exercício 6.1 — Síntese</span>
+    <h4>Análise completa</h4>
+    <p>Com os dados abaixo (anos de experiência vs. tempo para completar uma tarefa, em minutos), faça a análise completa: correlação, regressão, R², e preveja o tempo para 6 anos de experiência. O que o sinal do coeficiente angular indica?</p>
+    <details><summary>ver solução</summary>
+      <div class="rcell" data-code="experiencia <- c(1, 2, 3, 4, 5, 7, 8, 10)
+tempo       <- c(45, 42, 38, 35, 33, 28, 26, 22)
+
+# Correlacao
+cor(experiencia, tempo)
+
+# Regressao
+modelo <- lm(tempo ~ experiencia)
+summary(modelo)
+
+# Previsao para 6 anos
+predict(modelo, data.frame(experiencia = 6))
+
+# O coeficiente angular negativo indica que mais experiencia
+# reduz o tempo de execucao da tarefa."></div>
+    </details>
+  </div>
+</section>
+
+<footer>
+  <p>IFTM · Campus Uberlândia Centro · Análise de Dados II</p>
+  <p>R rodando no navegador via <a href="https://docs.r-wasm.org/webr/latest/" target="_blank">WebR</a></p>
+</footer>
+
+<!-- ════════════════════════ WEBR ENGINE ════════════════════════ -->
+<script type="module">
+  import { WebR } from 'https://webr.r-wasm.org/latest/webr.mjs';
+
+  const statusEl = document.getElementById('status');
+  const statusTxt = document.getElementById('status-txt');
+
+  const webR = new WebR();
+  let ready = false;
+
+  async function initWebR() {
+    await webR.init();
+    // canvas graphics device disponível via captura
+    ready = true;
+    statusEl.classList.add('ready');
+    statusTxt.textContent = 'R pronto';
+    document.querySelectorAll('.rcell-run').forEach(b => b.disabled = false);
+  }
+
+  // Monta cada célula R a partir do atributo data-code
+  function buildCells() {
+    document.querySelectorAll('.rcell').forEach((cell, idx) => {
+      const code = cell.getAttribute('data-code') || '';
+      cell.innerHTML = `
+        <div class="rcell-bar">
+          <span class="lbl">R</span>
+          <button class="rcell-run" disabled><span class="play">▶</span> Executar</button>
+        </div>
+        <textarea spellcheck="false" rows="${Math.min(code.split('\n').length + 1, 18)}">${code}</textarea>
+        <div class="rcell-out"><pre></pre></div>
+      `;
+      const btn = cell.querySelector('.rcell-run');
+      const ta  = cell.querySelector('textarea');
+      const out = cell.querySelector('.rcell-out');
+      const pre = out.querySelector('pre');
+
+      btn.addEventListener('click', () => runCell(ta.value, btn, out, pre));
+    });
+  }
+
+  async function runCell(code, btn, out, pre) {
+    if (!ready) return;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="play">⏳</span> Rodando…';
+    out.classList.add('show');
+    pre.innerHTML = '';
+    pre.classList.remove('err');
+    // remove gráficos de execuções anteriores
+    out.querySelectorAll('canvas.plot-img').forEach(c => c.remove());
+
+    const shelter = await new webR.Shelter();
+    try {
+      // Captura texto + gráficos
+      const result = await shelter.captureR(code, {
+        withAutoprint: true,
+        captureGraphics: true
+      });
+
+      // saída textual
+      const txt = result.output
+        .filter(o => o.type === 'stdout' || o.type === 'stderr')
+        .map(o => o.data)
+        .join('\n');
+      if (txt.trim()) pre.textContent = txt;
+
+      // gráficos (se houver)
+      if (result.images && result.images.length > 0) {
+        for (const img of result.images) {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          canvas.className = 'plot-img';
+          canvas.getContext('2d').drawImage(img, 0, 0);
+          out.appendChild(canvas);
+        }
+      }
+
+      if (!txt.trim() && (!result.images || result.images.length === 0)) {
+        pre.textContent = '(sem saída — código executado)';
+      }
+    } catch (e) {
+      pre.classList.add('err');
+      pre.textContent = 'Erro: ' + (e.message || e);
+    } finally {
+      shelter.purge();
+      btn.disabled = false;
+      btn.innerHTML = '<span class="play">▶</span> Executar';
+    }
+  }
+
+  buildCells();
+  initWebR();
+</script>
+
+</body>
+</html>
