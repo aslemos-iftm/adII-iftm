@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estudo Dirigido II: Testes e Poder — IFTM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:       #1a1a2e;
+    --ink-soft:  #3d3d5c;
+    --paper:     #f5f2eb;
+    --paper-alt: #ede9df;
+    --accent:    #2c7a4b;
+    --accent-d:  #1f5836;
+    --accent2:   #c0392b;
+    --accent3:   #2563a8;
+    --code-bg:   #1e2d3d;
+    --code-fg:   #d8e8d8;
+    --rule:      rgba(26,26,46,0.12);
+    --mono:      'DM Mono', 'Courier New', monospace;
+    --serif:     'DM Serif Display', Georgia, serif;
+    --sans:      'DM Sans', -apple-system, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-weight: 300; line-height: 1.7; padding-bottom: 80px; }
+
+  header { border-bottom: 2px solid var(--ink); padding: 22px clamp(20px, 5vw, 60px); display: flex; align-items: center; gap: 16px; background: var(--paper); position: sticky; top: 0; z-index: 50; flex-wrap: wrap; }
+  .badge { width: 44px; height: 44px; background: var(--ink); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .badge span { font-family: var(--mono); font-size: 9px; font-weight: 500; color: var(--paper); text-align: center; line-height: 1.2; }
+  .header-text h1 { font-family: var(--serif); font-size: clamp(1.05rem, 2.4vw, 1.4rem); font-weight: 400; line-height: 1.15; }
+  .header-text p { font-size: 0.72rem; color: var(--ink-soft); font-family: var(--mono); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 2px; }
+  .webr-status { margin-left: auto; font-family: var(--mono); font-size: 0.72rem; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 7px; background: var(--paper-alt); color: var(--ink-soft); transition: 0.3s; }
+  .webr-status .dot { width: 9px; height: 9px; border-radius: 50%; background: #e0b020; animation: pulse 1.5s infinite; }
+  .webr-status.ready { background: rgba(44,122,75,0.12); color: var(--accent-d); }
+  .webr-status.ready .dot { background: var(--accent); animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+  .intro { padding: clamp(32px, 5vw, 56px) clamp(20px, 5vw, 60px); border-bottom: 1px solid var(--rule); max-width: 900px; }
+  .intro .label { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .intro .label::before { content: ''; width: 28px; height: 1px; background: var(--accent); }
+  .intro h2 { font-family: var(--serif); font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1.12; font-weight: 400; margin-bottom: 20px; }
+  .intro h2 em { font-style: italic; color: var(--ink-soft); }
+  .intro p { font-size: 1.02rem; color: var(--ink-soft); max-width: 680px; }
+  .intro .how { margin-top: 24px; padding: 16px 20px; background: var(--paper-alt); border-left: 3px solid var(--accent); border-radius: 4px; font-size: 0.92rem; }
+  .intro .how strong { color: var(--ink); }
+
+  .toc { padding: 20px clamp(20px, 5vw, 60px); border-bottom: 1px solid var(--rule); display: flex; gap: 8px; flex-wrap: wrap; background: var(--paper); }
+  .toc a { font-family: var(--mono); font-size: 0.74rem; padding: 6px 13px; border: 1px solid var(--rule); border-radius: 20px; text-decoration: none; color: var(--ink-soft); transition: 0.2s; }
+  .toc a:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .module { padding: clamp(32px, 5vw, 52px) clamp(20px, 5vw, 60px); border-bottom: 1px solid var(--rule); max-width: 1000px; }
+  .module-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+  .module-num { font-family: var(--mono); font-size: 0.72rem; color: var(--accent); letter-spacing: 0.1em; flex-shrink: 0; }
+  .module-title { font-family: var(--serif); font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 400; line-height: 1.2; }
+  .module-sub { font-size: 0.95rem; color: var(--ink-soft); margin-bottom: 28px; max-width: 720px; }
+
+  .concept { margin: 24px 0; }
+  .concept h4 { font-family: var(--sans); font-weight: 500; font-size: 1.05rem; margin-bottom: 8px; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+  .concept h4::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
+  .concept p { font-size: 0.95rem; color: var(--ink-soft); margin-bottom: 10px; }
+  .concept .excel-note { font-size: 0.86rem; color: var(--accent3); background: rgba(37,99,168,0.07); padding: 8px 12px; border-radius: 4px; display: inline-block; }
+  .concept .excel-note strong { color: var(--accent3); }
+  .concept .formula { font-family: var(--mono); font-size: 0.9rem; background: var(--paper-alt); padding: 10px 14px; border-radius: 5px; display: block; margin: 8px 0; color: var(--ink); overflow-x: auto; }
+
+  .rcell { margin: 18px 0; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--code-bg); }
+  .rcell-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .rcell-bar .lbl { font-family: var(--mono); font-size: 0.7rem; color: #8aa; letter-spacing: 0.05em; }
+  .rcell-run { font-family: var(--mono); font-size: 0.74rem; background: var(--accent); color: white; border: none; padding: 5px 16px; border-radius: 5px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
+  .rcell-run:hover { background: var(--accent-d); }
+  .rcell-run:disabled { background: #556; cursor: not-allowed; opacity: 0.6; }
+  .rcell textarea { width: 100%; background: transparent; color: var(--code-fg); font-family: var(--mono); font-size: 0.86rem; line-height: 1.55; border: none; padding: 14px; resize: vertical; outline: none; min-height: 60px; tab-size: 2; }
+  .rcell-out { background: #14202c; border-top: 1px solid rgba(255,255,255,0.08); padding: 0; max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+  .rcell-out.show { max-height: 1400px; padding: 12px 14px; }
+  .rcell-out pre { font-family: var(--mono); font-size: 0.82rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; margin: 0; color: #c8d8e8; }
+  .rcell-out canvas.plot-img { max-width: 100%; background: white; border-radius: 4px; margin-top: 8px; display: block; }
+  .rcell-out pre.err { color: #ff8a7a; }
+
+  .exercise { margin: 22px 0; padding: 18px 20px; background: var(--paper-alt); border-radius: 8px; border-left: 4px solid var(--accent2); }
+  .exercise .etag { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent2); font-weight: 500; }
+  .exercise h4 { font-family: var(--sans); font-weight: 500; margin: 6px 0 8px; }
+  .exercise p { font-size: 0.92rem; color: var(--ink-soft); }
+  .exercise details { margin-top: 12px; }
+  .exercise summary { font-family: var(--mono); font-size: 0.78rem; color: var(--accent2); cursor: pointer; user-select: none; }
+  .exercise summary:hover { text-decoration: underline; }
+
+  footer { padding: 32px clamp(20px, 5vw, 60px); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  footer p { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-soft); }
+  footer a { color: var(--ink); }
+
+  code.inl { font-family: var(--mono); font-size: 0.88em; background: var(--paper-alt); padding: 1px 6px; border-radius: 3px; color: var(--accent-d); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge"><span>IF<br>TM</span></div>
+  <div class="header-text">
+    <h1>Estudo Dirigido II: Testes de Hipóteses e Poder</h1>
+    <p>Análise de Dados II · Tecnologia em Logística</p>
+  </div>
+  <div class="webr-status" id="status"><span class="dot"></span><span id="status-txt">Carregando R…</span></div>
+</header>
+
+<div class="intro">
+  <div class="label">Laboratório interativo · Parte II</div>
+  <h2>Da <em>decisão</em> estatística ao <em>poder</em> de detectá-la</h2>
+  <p>
+    Esta segunda parte avança sobre os testes de hipóteses formais: comparar uma média
+    ou proporção contra um valor de referência, e — o ponto mais sutil — medir o
+    <em>poder</em> do teste: a probabilidade de detectar um efeito quando ele de fato existe.
+    Como antes, o R roda no seu navegador; edite e execute à vontade.
+  </p>
+  <div class="how">
+    <strong>Pré-requisito:</strong> convém ter feito a Parte I (descritiva, teste t, ANOVA,
+    regressão). Aqui retomamos o teste t sob a ótica formal de H₀/H₁, α, β e poder.
+  </div>
+</div>
+
+<nav class="toc">
+  <a href="#m1">1 · Teste para média</a>
+  <a href="#m2">2 · Teste para proporção</a>
+  <a href="#m3">3 · Duas proporções</a>
+  <a href="#m4">4 · Erros α e β</a>
+  <a href="#m5">5 · Poder (manual)</a>
+  <a href="#m6">6 · Poder (pacote)</a>
+  <a href="#m7">7 · Curva de poder</a>
+</nav>
+
+<!-- ═══════════ MÓDULO 1 — TESTE PARA MÉDIA ═══════════ -->
+<section class="module" id="m1">
+  <div class="module-head"><span class="module-num">MÓDULO 1</span><h3 class="module-title">Teste de hipóteses para média</h3></div>
+  <p class="module-sub">Testar se a média de uma amostra difere de um valor de referência μ₀. É o teste t de uma amostra, agora lido sob a ótica formal: H₀: μ = μ₀ contra H₁: μ ≠ μ₀.</p>
+
+  <div class="concept">
+    <h4>O cenário</h4>
+    <p>Uma operação logística tem meta de 20 minutos por expedição. Coletamos uma amostra de tempos e queremos saber: a média real difere de 20? A hipótese nula é que não difere.</p>
+    <span class="formula">H₀: μ = 20     H₁: μ ≠ 20     α = 0,05</span>
+  </div>
+
+  <div class="rcell" data-code="# Tempos de expedicao (minutos) de 12 operacoes
+tempos <- c(21.5, 19.8, 22.3, 20.1, 23.0, 18.9,
+            21.2, 22.8, 20.5, 19.4, 21.9, 22.1)
+
+# Teste t de uma amostra contra mu0 = 20
+t.test(tempos, mu = 20)"></div>
+
+  <div class="concept">
+    <h4>Lendo o resultado</h4>
+    <p>O <code class="inl">p-value</code> decide: se menor que 0,05, rejeitamos H₀ — a média difere de 20. O intervalo de confiança mostra a faixa plausível para a média real; se 20 estiver fora dele, isso confirma a rejeição.</p>
+  </div>
+
+  <div class="exercise">
+    <span class="etag">Exercício 1.1</span>
+    <h4>Teste unicaudal</h4>
+    <p>Teste agora a hipótese de que a operação está <em>acima</em> da meta (μ &gt; 20), que seria um problema. Use <code class="inl">alternative = 'greater'</code>. O p-valor muda?</p>
+    <details><summary>ver solução</summary>
+      <div class="rcell" data-code="tempos <- c(21.5, 19.8, 22.3, 20.1, 23.0, 18.9,
+            21.2, 22.8, 20.5, 19.4, 21.9, 22.1)
+t.test(tempos, mu = 20, alternative = 'greater')"></div>
+    </details>
+  </div>
+</section>
+
+<!-- ═══════════ MÓDULO 2 — TESTE PARA PROPORÇÃO ═══════════ -->
+<section class="module" id="m2">
+  <div class="module-head"><span class="module-num">MÓDULO 2</span><h3 class="module-title">Teste de hipóteses para proporção</h3></div>
+  <p class="module-sub">Quando o dado é uma contagem de sucessos (aprovados, defeitos, entregas no prazo), testamos uma proporção contra um valor de referência p₀.</p>
+
+  <div class="concept">
+    <h4>O cenário</h4>
+    <p>A meta é que 90% das entregas cheguem no prazo. De 150 entregas auditadas, 128 chegaram no prazo. A proporção real difere de 0,90?</p>
+    <span class="formula">H₀: p = 0,90     H₁: p ≠ 0,90     n = 150, sucessos = 128</span>
+  </div>
+
+  <div class="concept">
+    <h4>Duas funções: prop.test e binom.test</h4>
+    <p>A <code class="inl">prop.test()</code> usa a aproximação normal (com correção de continuidade por padrão). A <code class="inl">binom.test()</code> usa a distribuição binomial exata — preferível para amostras pequenas.</p>
+    <span class="excel-note"><strong>No Excel:</strong> não há função direta; normalmente se calcula o z manualmente</span>
+  </div>
+
+  <div class="rcell" data-code="# Teste aproximado (normal) com correcao de continuidade
+prop.test(x = 128, n = 150, p = 0.90)"></div>
+
+  <div class="rcell" data-code="# Teste exato (binomial) - melhor para n pequeno
+binom.test(x = 128, n = 150, p = 0.90)"></div>
+
+  <div class="concept">
+    <h4>Comparando as duas abordagens</h4>
+    <p>Repare que os valores-p das duas funções são próximos mas não idênticos — exatamente a diferença entre a distribuição binomial exata e a aproximação normal que discutimos em aula. Para n = 150 a diferença é pequena; para n pequeno ela cresce.</p>
+  </div>
+
+  <div class="exercise">
+    <span class="etag">Exercício 2.1</span>
+    <h4>Amostra pequena</h4>
+    <p>Refaça o teste com uma amostra bem menor: 15 entregas, 11 no prazo, meta 0,90. Compare <code class="inl">prop.test()</code> e <code class="inl">binom.test()</code> — a diferença entre elas agora é maior?</p>
+    <details><summary>ver solução</summary>
+      <div class="rcell" data-code="prop.test(x = 11, n = 15, p = 0.90)
+binom.test(x = 11, n = 15, p = 0.90)"></div>
+    </details>
+  </div>
+</section>
+
+<!-- ═══════════ MÓDULO 3 — DUAS PROPORÇÕES ═══════════ -->
+<section class="module" id="m3">
+  <div class="module-head"><span class="module-num">MÓDULO 3</span><h3 class="module-title">Comparação de duas proporções</h3></div>
+  <p class="module-sub">Comparar a proporção de sucessos entre dois grupos — por exemplo, taxa de defeitos antes e depois de uma mudança de processo.</p>
+
+  <div class="concept">
+    <h4>O cenário</h4>
+    <p>Dois turnos de produção. No turno A, 45 de 200 peças tiveram defeito; no turno B, 30 de 220. As taxas de defeito diferem?</p>
+  </div>
+
+  <div class="rcell" data-code="# Sucessos (defeitos) e totais de cada grupo
+defeitos <- c(45, 30)
+totais   <- c(200, 220)
+
+prop.test(x = defeitos, n = totais)"></div>
+
+  <div class="concept">
+    <h4>Interpretação</h4>
+    <p>O R devolve as duas proporções estimadas (<code class="inl">prop 1</code>, <code class="inl">prop 2</code>), o valor-p e o intervalo de confiança para a diferença entre elas. Se o intervalo contém zero, não há evidência de diferença.</p>
+  </div>
+
+  <div class="exercise">
+    <span class="etag">Exercício 3.1</span>
+    <h4>Teste unicaudal direcionado</h4>
+    <p>Suponha que o turno B adotou um novo procedimento e você quer testar se ele <em>reduziu</em> defeitos (proporção A &gt; proporção B). Use <code class="inl">alternative = 'greater'</code>.</p>
+    <details><summary>ver solução</summary>
+      <div class="rcell" data-code="prop.test(x = c(45, 30), n = c(200, 220), alternative = 'greater')"></div>
+    </details>
+  </div>
+</section>
+
+<!-- ═══════════ MÓDULO 4 — ERROS α E β ═══════════ -->
+<section class="module" id="m4">
+  <div class="module-head"><span class="module-num">MÓDULO 4</span><h3 class="module-title">Os dois tipos de erro: α e β</h3></div>
+  <p class="module-sub">Todo teste pode errar de duas formas. Entender α e β é o passo necessário antes de calcular o poder.</p>
+
+  <div class="concept">
+    <h4>As duas maneiras de errar</h4>
+    <p><strong>Erro tipo I (α):</strong> rejeitar H₀ quando ela é verdadeira — o "falso alarme". Sua probabilidade é o próprio nível de significância que escolhemos, tipicamente 0,05.</p>
+    <p><strong>Erro tipo II (β):</strong> não rejeitar H₀ quando ela é falsa — a "camuflagem". Deixamos passar um efeito que existe. O poder do teste é 1 − β.</p>
+    <span class="formula">α = P(rejeitar H₀ | H₀ verdadeira)     β = P(não rejeitar H₀ | H₁ verdadeira)</span>
+  </div>
+
+  <div class="concept">
+    <h4>Visualizando as duas distribuições</h4>
+    <p>β vive na sobreposição entre a distribuição sob H₀ (centrada em μ₀) e a distribuição sob H₁ (centrada no valor real μ₁). Vamos desenhar as duas.</p>
+  </div>
+
+  <div class="rcell" data-code="# Parametros
+mu0 <- 20      # valor sob H0
+mu1 <- 22      # valor real (sob H1)
+sigma <- 4     # desvio padrao populacional
+n <- 30
+se <- sigma / sqrt(n)   # erro padrao da media
+
+# Valor critico (unicaudal superior, alpha = 0.05)
+alpha <- 0.05
+crit <- mu0 + qnorm(1 - alpha) * se
+
+# Desenhar as duas distribuicoes
+x <- seq(16, 26, length.out = 400)
+plot(x, dnorm(x, mu0, se), type = 'l', lwd = 2, col = '#2c3e50',
+     xlab = 'Media amostral', ylab = 'Densidade',
+     main = 'Distribuicao sob H0 (preto) e sob H1 (roxo)')
+lines(x, dnorm(x, mu1, se), lwd = 2, col = '#8e44ad')
+abline(v = crit, col = '#c0392b', lwd = 2, lty = 2)
+legend('topright', legend = c('H0', 'H1', 'valor critico'),
+       col = c('#2c3e50', '#8e44ad', '#c0392b'), lwd = 2, lty = c(1,1,2))"></div>
+
+  <div class="concept">
+    <h4>Calculando β diretamente</h4>
+    <p>β é a área da distribuição sob H₁ que fica <em>abaixo</em> do valor crítico — ou seja, a região onde não rejeitamos H₀ mesmo H₁ sendo verdadeira.</p>
+  </div>
+
+  <div class="rcell" data-code="mu0 <- 20; mu1 <- 22; sigma <- 4; n <- 30
+se <- sigma / sqrt(n)
+crit <- mu0 + qnorm(0.95) * se
+
+# beta = probabilidade de cair abaixo do critico, sob H1
+beta <- pnorm(crit, mean = mu1, sd = se)
+poder <- 1 - beta
+
+cat('Valor critico:', round(crit, 3), '\n')
+cat('Beta (erro tipo II):', round(beta, 4), '\n')
+cat('Poder (1 - beta):', round(poder, 4), '\n')"></div>
+</section>
+
+<!-- ═══════════ MÓDULO 5 — PODER MANUAL ═══════════ -->
+<section class="module" id="m5">
+  <div class="module-head"><span class="module-num">MÓDULO 5</span><h3 class="module-title">Poder do teste — cálculo manual</h3></div>
+  <p class="module-sub">Agora montamos o cálculo do poder passo a passo, para ver exatamente de onde ele vem. Depois, no módulo seguinte, usamos o pacote pronto como atalho.</p>
+
+  <div class="concept">
+    <h4>A lógica em quatro passos</h4>
+    <p>1) fixar μ₀, μ₁, σ, n e α; 2) achar o valor crítico sob H₀; 3) calcular a área da distribuição sob H₁ além do crítico — esse é o poder; 4) o que sobra é β.</p>
+  </div>
+
+  <div class="rcell" data-code="# Funcao que calcula o poder de um teste t unicaudal (media)
+poder_media <- function(mu0, mu1, sigma, n, alpha = 0.05) {
+  se   <- sigma / sqrt(n)
+  crit <- mu0 + qnorm(1 - alpha) * se      # valor critico
+  poder <- 1 - pnorm(crit, mean = mu1, sd = se)
+  return(poder)
+}
+
+# Exemplo: detectar um aumento de 20 para 22 minutos
+poder_media(mu0 = 20, mu1 = 22, sigma = 4, n = 30)"></div>
+
+  <div class="concept">
+    <h4>Como o poder depende de n</h4>
+    <p>Quanto maior a amostra, menor o erro padrão, mais separadas as distribuições, maior o poder. Vamos ver isso numericamente.</p>
+  </div>
+
+  <div class="rcell" data-code="poder_media <- function(mu0, mu1, sigma, n, alpha = 0.05) {
+  se <- sigma / sqrt(n)
+  crit <- mu0 + qnorm(1 - alpha) * se
+  1 - pnorm(crit, mean = mu1, sd = se)
+}
+
+# Poder para varios tamanhos de amostra
+tamanhos <- c(10, 20, 30, 50, 80, 120)
+for (n in tamanhos) {
+  p <- poder_media(20, 22, 4, n)
+  cat('n =', n, '-> poder =', round(p, 3), '\n')
+}"></div>
+
+  <div class="exercise">
+    <span class="etag">Exercício 5.1</span>
+    <h4>Efeito do tamanho do efeito</h4>
+    <p>Fixe n = 30 e veja como o poder muda conforme μ₁ se afasta de μ₀: teste μ₁ = 21, 22, 23, 24. Quanto maior o efeito real, mais fácil detectá-lo?</p>
+    <details><summary>ver solução</summary>
+      <div class="rcell" data-code="poder_media <- function(mu0, mu1, sigma, n, alpha = 0.05) {
+  se <- sigma / sqrt(n)
+  crit <- mu0 + qnorm(1 - alpha) * se
+  1 - pnorm(crit, mean = mu1, sd = se)
+}
+for (mu1 in c(21, 22, 23, 24)) {
+  cat('mu1 =', mu1, '-> poder =', round(poder_media(20, mu1, 4, 30), 3), '\n')
+}"></div>
+    </details>
+  </div>
+</section>
+
+<!-- ═══════════ MÓDULO 6 — PODER VIA PACOTE ═══════════ -->
+<section class="module" id="m6">
+  <div class="module-head"><span class="module-num">MÓDULO 6</span><h3 class="module-title">Poder do teste — pacote pronto</h3></div>
+  <p class="module-sub">Agora que entendemos o mecanismo, o R oferece funções prontas que fazem tudo de uma vez — inclusive o cálculo inverso: qual n é necessário para um poder desejado.</p>
+
+  <div class="concept">
+    <h4>power.t.test — já vem no R base</h4>
+    <p>Calcula qualquer um dos parâmetros deixando-o como <code class="inl">NULL</code>. Aqui o tamanho do efeito é dado por <code class="inl">delta</code> (diferença de médias) e <code class="inl">sd</code>.</p>
+  </div>
+
+  <div class="rcell" data-code="# Poder de um teste t, dado n = 30 e efeito delta = 2
+power.t.test(n = 30, delta = 2, sd = 4,
+             sig.level = 0.05, type = 'one.sample',
+             alternative = 'one.sided')"></div>
+
+  <div class="concept">
+    <h4>O cálculo inverso: quantos dados preciso?</h4>
+    <p>A pergunta mais útil no planejamento: deixando <code class="inl">n = NULL</code> e fixando o poder desejado, o R devolve o tamanho amostral necessário.</p>
+  </div>
+
+  <div class="rcell" data-code="# Quantas observacoes para detectar delta = 2 com poder 0.80?
+power.t.test(delta = 2, sd = 4, power = 0.80,
+             sig.level = 0.05, type = 'one.sample',
+             alternative = 'one.sided')"></div>
+
+  <div class="concept">
+    <h4>Poder para proporção — pacote pwr</h4>
+    <p>Para proporções, o pacote <code class="inl">pwr</code> é o padrão. Ele precisa ser instalado primeiro (uma vez por sessão no WebR).</p>
+  </div>
+
+  <div class="rcell" data-code="# Instala o pacote pwr (leva alguns segundos na primeira vez)
+webr::install('pwr')
+library(pwr)
+
+# Tamanho do efeito para proporcoes: h de Cohen
+h <- ES.h(p1 = 0.80, p2 = 0.90)
+
+# Poder para detectar essa diferenca com n = 100
+pwr.p.test(h = h, n = 100, sig.level = 0.05,
+           alternative = 'two.sided')"></div>
+
+  <div class="exercise">
+    <span class="etag">Exercício 6.1</span>
+    <h4>Planejamento de amostra para proporção</h4>
+    <p>Usando <code class="inl">pwr.p.test</code>, descubra quantas observações são necessárias para detectar a diferença entre p = 0,80 e p = 0,90 com poder 0,80. Deixe <code class="inl">n = NULL</code> e informe <code class="inl">power = 0.80</code>.</p>
+    <details><summary>ver solução</summary>
+      <div class="rcell" data-code="library(pwr)
+h <- ES.h(p1 = 0.80, p2 = 0.90)
+pwr.p.test(h = h, power = 0.80, sig.level = 0.05,
+           alternative = 'two.sided')"></div>
+    </details>
+  </div>
+</section>
+
+<!-- ═══════════ MÓDULO 7 — CURVA DE PODER ═══════════ -->
+<section class="module" id="m7">
+  <div class="module-head"><span class="module-num">MÓDULO 7</span><h3 class="module-title">A curva de poder</h3></div>
+  <p class="module-sub">A síntese visual: um gráfico que mostra como o poder cresce com o tamanho da amostra (ou com o tamanho do efeito). É a ferramenta central para planejar um estudo.</p>
+
+  <div class="concept">
+    <h4>Poder × tamanho da amostra</h4>
+    <p>Traçamos o poder para uma faixa de valores de n, marcando a linha de referência do poder 0,80 — o alvo convencional.</p>
+  </div>
+
+  <div class="rcell" data-code="poder_media <- function(mu0, mu1, sigma, n, alpha = 0.05) {
+  se <- sigma / sqrt(n)
+  crit <- mu0 + qnorm(1 - alpha) * se
+  1 - pnorm(crit, mean = mu1, sd = se)
+}
+
+ns <- seq(5, 150, by = 1)
+poderes <- sapply(ns, function(n) poder_media(20, 22, 4, n))
+
+plot(ns, poderes, type = 'l', lwd = 2, col = '#2c7a4b',
+     xlab = 'Tamanho da amostra (n)', ylab = 'Poder (1 - beta)',
+     main = 'Curva de poder: detectar aumento de 20 para 22 min',
+     ylim = c(0, 1))
+abline(h = 0.80, col = '#c0392b', lty = 2)
+abline(h = 0.05, col = '#888888', lty = 3)
+text(120, 0.83, 'poder alvo = 0.80', col = '#c0392b', cex = 0.8)"></div>
+
+  <div class="concept">
+    <h4>Comparando efeitos diferentes na mesma curva</h4>
+    <p>Sobrepondo curvas para efeitos de tamanhos diferentes, vê-se por que efeitos pequenos exigem amostras muito maiores.</p>
+  </div>
+
+  <div class="rcell" data-code="poder_media <- function(mu0, mu1, sigma, n, alpha = 0.05) {
+  se <- sigma / sqrt(n)
+  crit <- mu0 + qnorm(1 - alpha) * se
+  1 - pnorm(crit, mean = mu1, sd = se)
+}
+
+ns <- seq(5, 200, by = 1)
+p1 <- sapply(ns, function(n) poder_media(20, 21, 4, n))  # efeito pequeno
+p2 <- sapply(ns, function(n) poder_media(20, 22, 4, n))  # efeito medio
+p3 <- sapply(ns, function(n) poder_media(20, 23, 4, n))  # efeito grande
+
+plot(ns, p3, type = 'l', lwd = 2, col = '#2c7a4b', ylim = c(0,1),
+     xlab = 'n', ylab = 'Poder', main = 'Poder por tamanho do efeito')
+lines(ns, p2, lwd = 2, col = '#2563a8')
+lines(ns, p1, lwd = 2, col = '#c0392b')
+abline(h = 0.80, lty = 2, col = '#888888')
+legend('bottomright',
+       legend = c('efeito 3 (grande)', 'efeito 2 (medio)', 'efeito 1 (pequeno)'),
+       col = c('#2c7a4b', '#2563a8', '#c0392b'), lwd = 2)"></div>
+
+  <div class="exercise">
+    <span class="etag">Exercício 7.1 — Síntese</span>
+    <h4>Curva de poder via pacote</h4>
+    <p>O pacote <code class="inl">pwr</code> tem uma função de plotagem automática. Rode <code class="inl">plot(pwr.t.test(...))</code> para um teste t e compare com a curva que construímos manualmente. Elas devem coincidir.</p>
+    <details><summary>ver solução</summary>
+      <div class="rcell" data-code="library(pwr)
+# d de Cohen = delta / sd = 2/4 = 0.5
+resultado <- pwr.t.test(d = 0.5, power = 0.80,
+                        type = 'one.sample',
+                        alternative = 'greater')
+resultado
+plot(resultado)"></div>
+    </details>
+  </div>
+</section>
+
+<footer>
+  <p>IFTM · Campus Uberlândia Centro · Análise de Dados II</p>
+  <p>R rodando no navegador via <a href="https://docs.r-wasm.org/webr/latest/" target="_blank">WebR</a></p>
+</footer>
+
+<script type="module">
+  import { WebR } from 'https://webr.r-wasm.org/latest/webr.mjs';
+
+  const statusEl = document.getElementById('status');
+  const statusTxt = document.getElementById('status-txt');
+  const webR = new WebR();
+  let ready = false;
+
+  async function initWebR() {
+    await webR.init();
+    ready = true;
+    statusEl.classList.add('ready');
+    statusTxt.textContent = 'R pronto';
+    document.querySelectorAll('.rcell-run').forEach(b => b.disabled = false);
+  }
+
+  function buildCells() {
+    document.querySelectorAll('.rcell').forEach((cell) => {
+      const code = cell.getAttribute('data-code') || '';
+      cell.innerHTML = `
+        <div class="rcell-bar">
+          <span class="lbl">R</span>
+          <button class="rcell-run" disabled><span class="play">▶</span> Executar</button>
+        </div>
+        <textarea spellcheck="false" rows="${Math.min(code.split('\n').length + 1, 20)}">${code}</textarea>
+        <div class="rcell-out"><pre></pre></div>
+      `;
+      const btn = cell.querySelector('.rcell-run');
+      const ta  = cell.querySelector('textarea');
+      const out = cell.querySelector('.rcell-out');
+      const pre = out.querySelector('pre');
+      btn.addEventListener('click', () => runCell(ta.value, btn, out, pre));
+    });
+  }
+
+  async function runCell(code, btn, out, pre) {
+    if (!ready) return;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="play">⏳</span> Rodando…';
+    out.classList.add('show');
+    pre.innerHTML = '';
+    pre.classList.remove('err');
+    out.querySelectorAll('canvas.plot-img').forEach(c => c.remove());
+
+    const shelter = await new webR.Shelter();
+    try {
+      const result = await shelter.captureR(code, {
+        withAutoprint: true,
+        captureGraphics: true
+      });
+      const txt = result.output
+        .filter(o => o.type === 'stdout' || o.type === 'stderr')
+        .map(o => o.data)
+        .join('\n');
+      if (txt.trim()) pre.textContent = txt;
+
+      if (result.images && result.images.length > 0) {
+        for (const img of result.images) {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          canvas.className = 'plot-img';
+          canvas.getContext('2d').drawImage(img, 0, 0);
+          out.appendChild(canvas);
+        }
+      }
+      if (!txt.trim() && (!result.images || result.images.length === 0)) {
+        pre.textContent = '(sem saída — código executado)';
+      }
+    } catch (e) {
+      pre.classList.add('err');
+      pre.textContent = 'Erro: ' + (e.message || e);
+    } finally {
+      shelter.purge();
+      btn.disabled = false;
+      btn.innerHTML = '<span class="play">▶</span> Executar';
+    }
+  }
+
+  buildCells();
+  initWebR();
+</script>
+
+</body>
+</html>
